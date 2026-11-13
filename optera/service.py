@@ -36,6 +36,7 @@ def compare(data: dict, time_limit: float = 8.0, engine: str = "milp_highs",
     return {"schema_version": 1, "engine": engine, "factory": data.get("factory_name", "Untitled factory"),
             "baseline_policy": baseline_policy, "objective": objective, "target_metric": primary_metric,
             "baseline": {"name": POLICIES[baseline_policy], "metrics": before, "schedule": baseline},
-            "optimized": {"name": "MILP / HiGHS", "metrics": after, "schedule": after_schedule},
+            "optimized": {"name": ("Hybrid Local Search + MILP" if engine == "hybrid_search_highs" else "MILP / HiGHS"),
+                          "metrics": after, "schedule": after_schedule},
             "improvement_percent": gain, "solver": solution["solver"],
             "note": "Benchmark on scenario input; not verified real-world savings."}

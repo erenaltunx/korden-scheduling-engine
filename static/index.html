@@ -24,6 +24,11 @@
       <p class="help">HiGHS searches for the best feasible schedule and may prove optimality.</p>
     </div>
     <div class="control-group">
+      <label for="engineSelect">Scheduling approach</label>
+      <select id="engineSelect"><option value="hybrid_search_highs">Hybrid: Local Search + MILP</option><option value="milp_highs">MILP / HiGHS only</option></select>
+      <p class="help">Hybrid mode adds a fast feasible job-order search; only an MILP proof certifies optimality. Makespan uses MILP only.</p>
+    </div>
+    <div class="control-group">
       <label for="objectiveSelect">Optimization target</label>
       <select id="objectiveSelect"><option value="weighted_tardiness">Weighted order tardiness</option><option value="makespan">Total production completion (makespan)</option></select>
       <p class="help">Public JSPLib benchmarks use makespan, not tardiness. Never compare different objectives.</p>

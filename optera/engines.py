@@ -5,10 +5,12 @@ Do not load engines from user-provided paths or arbitrary imports.
 from __future__ import annotations
 from collections.abc import Callable
 from .optimizer import optimize
+from .hybrid import hybrid_optimize
 
 # A solver must return {"schedule": list[dict] | None, "solver": metadata}.
 # All returned schedules pass through the independent checker in service.compare.
-ENGINES: dict[str, Callable[[dict, float], dict]] = {"milp_highs": optimize}
+ENGINES: dict[str, Callable[[dict, float], dict]] = {"milp_highs": optimize,
+                                                    "hybrid_search_highs": hybrid_optimize}
 
 
 def optimize_with(engine: str, scenario: dict, time_limit: float, **options) -> dict:
