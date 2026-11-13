@@ -161,6 +161,34 @@ jobs:
           name: optera-ci-benchmark
           path: artifacts/ci_suite.*
 
+  finite-working-calendar-audit:
+    name: Validated finite production shift calendars
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pytest -q tests/test_work_windows.py
+      - run: python shift_lab.py --out artifacts/shift_window_evidence.json
+      - name: Verify shift-aware baseline and optimization
+        run: |
+          python - <<'PYCODE'
+          import json
+          evidence=json.load(open('artifacts/shift_window_evidence.json'))
+          assert evidence['shift_aware']
+          assert evidence['baseline_feasible']
+          assert evidence['optimized_feasible']
+          assert evidence['optimized_weighted_tardiness'] <= evidence['baseline_weighted_tardiness']
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: optera-finite-shift-evidence
+          path: artifacts/shift_window_evidence.json
+
   container-smoke:
     name: Docker build and health probe
     needs: tests
