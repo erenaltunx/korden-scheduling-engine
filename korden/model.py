@@ -13,6 +13,7 @@ class Task:
     index: int
     duration: int
     machines: tuple[str, ...]
+    support_resources: tuple[str, ...] = ()
 
 
 def validate_scenario(data: dict) -> dict:
@@ -84,6 +85,13 @@ def validate_scenario(data: dict) -> dict:
                     any(not isinstance(mid, str) or mid not in ids for mid in eligible) or
                     len(set(eligible)) != len(eligible)):
                 raise ValueError(f"Job {jid}/{op['id']}: machines must be valid unique machine IDs")
+            supports = op.get('support_resources', [])
+            if (not isinstance(supports, list) or
+                    any(not isinstance(r, str) or r not in ids for r in supports) or
+                    len(supports) != len(set(supports))):
+                raise ValueError(f"Job {jid}/{op['id']}: support_resources must be unique known resource IDs")
+            if set(supports) & set(eligible):
+                raise ValueError(f"Job {jid}/{op['id']}: support resources cannot also be candidate primary machines")
             num_ops += 1
     if num_ops > 65:
         raise ValueError("This first version supports at most 65 operations per scenario")
@@ -95,7 +103,8 @@ def all_tasks(data: dict) -> list[Task]:
     for job in data["jobs"]:
         for idx, op in enumerate(job["operations"]):
             tasks.append(Task(f"{job['id']}::{idx}", job["id"], op["id"], idx,
-                              op["duration"], tuple(op["machines"])))
+                              op["duration"], tuple(op["machines"]),
+                              tuple(op.get("support_resources", []))))
     return tasks
 
 

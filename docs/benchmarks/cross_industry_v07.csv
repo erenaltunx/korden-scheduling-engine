@@ -1,0 +1,4 @@
+template,industry,time_unit,resources,work_orders,steps,optimized_weighted_tardiness,optimized_makespan,relative_improvement_vs_best_percent,feasible_schedule,optimality_proven,solve_seconds,solver_status
+manufacturing,Discrete manufacturing,hour,4,5,10,121,39,0.0,True,True,0.118,optimal
+field_service,Field service,hour,4,5,7,18,11,41.94,True,True,0.04,optimal
+warehouse,Warehouse operations,minute,5,6,12,272,129,43.8,True,True,0.244,optimal

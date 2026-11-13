@@ -96,6 +96,11 @@ def optimize(data: dict, time_limit: float = 8.0, *,
                 assignments[(t.key, machine)] = m.var(f"machine:{t.key}:{machine}", choice, choice)
             else:
                 assignments[(t.key, machine)] = m.var(f"machine:{t.key}:{machine}")
+        # A task chooses exactly one primary resource, but reserves every
+        # required support resource simultaneously for its entire duration.
+        for supporting in t.support_resources:
+            assignments[(t.key, supporting)] = m.var(
+                f"reserved:{t.key}:{supporting}", 1, 1)
         m.row({assignments[(t.key, mid)]: 1 for mid in t.machines}, lb=1, ub=1)
         if t.index == 0:
             m.row({starts[t.key]: 1}, lb=by_job[t.job_id]["release"])
@@ -106,7 +111,7 @@ def optimize(data: dict, time_limit: float = 8.0, *,
     # For each pair eligible on same machine, require one task before the other
     # if and only if both choose that machine.
     for machine in windows:
-        eligible = [t for t in tasks if machine in t.machines]
+        eligible = [t for t in tasks if machine in t.machines or machine in t.support_resources]
         for a, b in combinations(eligible, 2):
             z = m.var(f"order:{machine}:{a.key}:{b.key}")
             xa, xb = assignments[(a.key, machine)], assignments[(b.key, machine)]
@@ -151,8 +156,11 @@ def optimize(data: dict, time_limit: float = 8.0, *,
     for t in tasks:
         chosen = max(t.machines, key=lambda mid: result.x[assignments[t.key, mid]])
         start = int(round(result.x[starts[t.key]]))
-        schedule.append({"key": t.key, "job": t.job_id, "operation": t.operation_id,
-                         "machine": chosen, "start": start, "end": start + t.duration,
-                         "duration": t.duration})
+        row = {"key": t.key, "job": t.job_id, "operation": t.operation_id,
+               "machine": chosen, "start": start, "end": start + t.duration,
+               "duration": t.duration}
+        if t.support_resources:
+            row['support_resources'] = list(t.support_resources)
+        schedule.append(row)
     return {"schedule": sorted(schedule, key=lambda r: (r["start"], r["machine"], r["key"])),
             "solver": metadata}

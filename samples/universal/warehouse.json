@@ -44,6 +44,20 @@
         "pack"
       ],
       "unavailable": []
+    },
+    {
+      "id": "PACK_TEAM",
+      "name": "Shared packing worker",
+      "kind": "human_operator",
+      "capabilities": [
+        "packing_labor"
+      ],
+      "unavailable": [
+        {
+          "start": 70,
+          "end": 82
+        }
+      ]
     }
   ],
   "work_orders": [
@@ -68,6 +82,9 @@
           "duration": 15,
           "requires_all": [
             "pack"
+          ],
+          "reserve_resources": [
+            "PACK_TEAM"
           ]
         }
       ]
@@ -93,6 +110,9 @@
           "duration": 11,
           "requires_all": [
             "pack"
+          ],
+          "reserve_resources": [
+            "PACK_TEAM"
           ]
         }
       ]
@@ -118,6 +138,9 @@
           "duration": 12,
           "requires_all": [
             "pack"
+          ],
+          "reserve_resources": [
+            "PACK_TEAM"
           ]
         }
       ]
@@ -143,6 +166,9 @@
           "duration": 17,
           "requires_all": [
             "pack"
+          ],
+          "reserve_resources": [
+            "PACK_TEAM"
           ]
         }
       ]
@@ -168,6 +194,9 @@
           "duration": 12,
           "requires_all": [
             "pack"
+          ],
+          "reserve_resources": [
+            "PACK_TEAM"
           ]
         }
       ]
@@ -193,6 +222,9 @@
           "duration": 19,
           "requires_all": [
             "pack"
+          ],
+          "reserve_resources": [
+            "PACK_TEAM"
           ]
         }
       ]

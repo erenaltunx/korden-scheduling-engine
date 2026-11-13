@@ -85,6 +85,7 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements.txt
       - run: python universal_benchmark.py --limit 6 --out artifacts/cross_industry
+      - run: python universal_benchmark.py --dataset-dir samples/archives/v06 --limit 6 --out artifacts/archive_v06
       - name: Verify all independent scheduling results
         run: |
           python - <<'PYCODE'
@@ -97,7 +98,9 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: korden-cross-industry-audit
-          path: artifacts/cross_industry.*
+          path: |
+            artifacts/cross_industry.*
+            artifacts/archive_v06.*
 
   external-reference-benchmark:
     name: FT06 published optimum regression

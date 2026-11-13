@@ -1,0 +1,131 @@
+[
+  {
+    "template": "manufacturing",
+    "industry": "Discrete manufacturing",
+    "time_unit": "hour",
+    "resources": 4,
+    "work_orders": 5,
+    "steps": 10,
+    "baselines": [
+      {
+        "policy": "edd",
+        "weighted_tardiness": 155,
+        "makespan": 40
+      },
+      {
+        "policy": "fifo",
+        "weighted_tardiness": 346,
+        "makespan": 39
+      },
+      {
+        "policy": "spt",
+        "weighted_tardiness": 156,
+        "makespan": 40
+      },
+      {
+        "policy": "wspt",
+        "weighted_tardiness": 121,
+        "makespan": 39
+      }
+    ],
+    "best_baseline": {
+      "policy": "wspt",
+      "weighted_tardiness": 121,
+      "makespan": 39
+    },
+    "optimized_weighted_tardiness": 121,
+    "optimized_makespan": 39,
+    "relative_improvement_vs_best_percent": 0.0,
+    "feasible_schedule": true,
+    "optimality_proven": true,
+    "solve_seconds": 0.118,
+    "solver_status": "optimal",
+    "note": "Illustrative synthetic workflow. No evidence of live operational savings."
+  },
+  {
+    "template": "field_service",
+    "industry": "Field service",
+    "time_unit": "hour",
+    "resources": 4,
+    "work_orders": 5,
+    "steps": 7,
+    "baselines": [
+      {
+        "policy": "edd",
+        "weighted_tardiness": 31,
+        "makespan": 13
+      },
+      {
+        "policy": "fifo",
+        "weighted_tardiness": 45,
+        "makespan": 11
+      },
+      {
+        "policy": "spt",
+        "weighted_tardiness": 31,
+        "makespan": 13
+      },
+      {
+        "policy": "wspt",
+        "weighted_tardiness": 31,
+        "makespan": 13
+      }
+    ],
+    "best_baseline": {
+      "policy": "edd",
+      "weighted_tardiness": 31,
+      "makespan": 13
+    },
+    "optimized_weighted_tardiness": 18,
+    "optimized_makespan": 11,
+    "relative_improvement_vs_best_percent": 41.94,
+    "feasible_schedule": true,
+    "optimality_proven": true,
+    "solve_seconds": 0.04,
+    "solver_status": "optimal",
+    "note": "Illustrative synthetic workflow. No evidence of live operational savings."
+  },
+  {
+    "template": "warehouse",
+    "industry": "Warehouse operations",
+    "time_unit": "minute",
+    "resources": 5,
+    "work_orders": 6,
+    "steps": 12,
+    "baselines": [
+      {
+        "policy": "edd",
+        "weighted_tardiness": 484,
+        "makespan": 130
+      },
+      {
+        "policy": "fifo",
+        "weighted_tardiness": 775,
+        "makespan": 125
+      },
+      {
+        "policy": "spt",
+        "weighted_tardiness": 500,
+        "makespan": 130
+      },
+      {
+        "policy": "wspt",
+        "weighted_tardiness": 585,
+        "makespan": 141
+      }
+    ],
+    "best_baseline": {
+      "policy": "edd",
+      "weighted_tardiness": 484,
+      "makespan": 130
+    },
+    "optimized_weighted_tardiness": 272,
+    "optimized_makespan": 129,
+    "relative_improvement_vs_best_percent": 43.8,
+    "feasible_schedule": true,
+    "optimality_proven": true,
+    "solve_seconds": 0.244,
+    "solver_status": "optimal",
+    "note": "Illustrative synthetic workflow. No evidence of live operational savings."
+  }
+]
