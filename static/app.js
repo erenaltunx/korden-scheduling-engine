@@ -6,6 +6,10 @@ let currentTimeUnit = 'hour';
 let lastResult = null;
 let activeView = 'optimized';
 let maxSolverSeconds = 60;
+let selectedInputMode = 'demo';
+let loadedInputKind = null;
+let inputRevision = 0;
+let runInProgress = false;
 const COLORS = ['#5979e8','#ae74d4','#42a98f','#d18d5d','#be657e','#778ed6','#c3a65a','#56a2bd','#9382d4','#74a67d'];
 function e(tag, text, cls) {
   const el = document.createElement(tag); if (text !== undefined) el.textContent = String(text);
@@ -16,8 +20,30 @@ function setStatus(msg, error=false) {
   output.textContent=msg;
   output.style.color=error ? '#ab3434' : '#526b74';
 }
+function syncRunAvailability() {
+  const ready = Boolean(currentScenario) && loadedInputKind === selectedInputMode;
+  const button = $('runButton');
+  button.disabled = runInProgress || !ready;
+  button.setAttribute('aria-disabled', String(button.disabled));
+}
+function clearPlanPreview() {
+  lastResult = null;
+  $('downloadButton').disabled=true;
+  $('exportBiButton').disabled=true;
+  $('exportBiButton').hidden=true;
+  $('rescheduleButton').disabled=true;
+  $('kpis').replaceChildren(e('div','Choose your data and generate a new plan.','empty-kpi'));
+  $('timeline').replaceChildren(e('div','A new plan will appear here.','empty-state'));
+  $('chartLegend').replaceChildren();
+  $('runState').textContent='Waiting for data';
+}
 function setInputMode(mode) {
-  // Only the selected input path is shown; both paths keep their data.
+  const changed = selectedInputMode !== mode;
+  selectedInputMode = mode;
+  if(changed) {
+    inputRevision++;
+    clearPlanPreview();
+  }
   const excel=mode==='excel';
   $('demoPanel').hidden=excel;
   $('excelPanel').hidden=!excel;
@@ -25,6 +51,20 @@ function setInputMode(mode) {
   $('modeExcel').classList.toggle('active',excel);
   $('modeDemo').setAttribute('aria-pressed',String(!excel));
   $('modeExcel').setAttribute('aria-pressed',String(excel));
+  syncRunAvailability();
+  if(changed) {
+    if(excel) setStatus('Choose an Excel file and select Validate & load Excel before generating a plan.');
+    else setStatus('Choose an example to generate a plan.');
+  }
+}
+function invalidateExcelImport() {
+  // A file or import setting changed: the previous validated data is no longer current.
+  if(selectedInputMode!=='excel') return;
+  loadedInputKind=null;
+  inputRevision++;
+  clearPlanPreview();
+  syncRunAvailability();
+  enterpriseFeedback('File or import settings changed. Validate & load the workbook before generating a new plan.');
 }
 function refreshMachineOptions(s) {
   const select=$('outageMachine'), prev=select.value;
@@ -89,8 +129,9 @@ function readScenario() {
 }
 async function loadScenario(name) {
   if(name.startsWith('industry:')){await loadUniversal(name.slice(9));return;}
+  loadedInputKind=null;inputRevision++;
   currentUniversalScenario = null;currentTimeUnit = 'hour';$('studioEditor').hidden=true;
-  setInputMode('demo');
+  setInputMode('demo');syncRunAvailability();
   const isPublic=name.startsWith('public:');
   const res=await fetch(isPublic?('/api/public-benchmarks/'+encodeURIComponent(name.slice(7))):('/api/scenarios/'+encodeURIComponent(name)));
   $('objectiveSelect').value=isPublic?'makespan':'weighted_tardiness';if(!res.ok)throw Error('Could not load scenario');
@@ -99,6 +140,7 @@ async function loadScenario(name) {
   $('kpis').replaceChildren(e('div','Run this scenario to generate your measured benchmark.','empty-kpi'));
   $('timeline').replaceChildren();$('timeline').append(e('div','Ready to optimize.','empty-state'));
   $('experimentMeta').replaceChildren(e('div','No experiment executed.','placeholder'));
+  loadedInputKind='demo';syncRunAvailability();
   $('runState').textContent='Ready to run';$('rescheduleButton').disabled=true;setStatus('Ready: '+currentScenario.factory_name);
 }
 function kpi(label, value, old, detail, positive) {
@@ -125,9 +167,9 @@ function renderResult() {
     );
   }else{
     area.replaceChildren(
-      kpi('Weighted tardiness',o.weighted_tardiness,b.weighted_tardiness,improvement===null?'Selected baseline has zero tardiness':`${improvement.toFixed(2)}% improvement vs. ${baselineName}`, o.weighted_tardiness<b.weighted_tardiness),
+      kpi('Priority-weighted delay',o.weighted_tardiness,b.weighted_tardiness,improvement===null?'No baseline delay (lower is better)':`${improvement.toFixed(2)}% less vs. ${baselineName} · lower is better`, o.weighted_tardiness<b.weighted_tardiness),
       kpi('Late customer orders',o.late_jobs,b.late_jobs,`${currentScenario.jobs.length} total orders`,o.late_jobs<b.late_jobs),
-      kpi('Makespan · '+currentTimeUnit+'s',o.makespan,b.makespan,'Final completion time',o.makespan<b.makespan),
+      kpi('Production finish · '+currentTimeUnit+'s',o.makespan,b.makespan,'Final operation completion time',o.makespan<b.makespan),
       kpi('Solve time · sec',sol.solve_seconds.toFixed(3),null,sol.optimality_proven?'Mathematical optimum proven':'Best feasible plan / time limit',false)
     );
   }
@@ -147,7 +189,11 @@ function renderResult() {
       meta('Changed remaining operations',lastResult.stability.rescheduled_operations),
       meta('Machine reassignments',lastResult.stability.machine_reassignments),
       meta('Start-time shift (hours)',lastResult.stability.total_absolute_start_shift_hours)] : [])); 
-  $('downloadButton').disabled=false;$('exportBiButton').disabled=!currentUniversalScenario;$('rescheduleButton').disabled=Boolean(currentUniversalScenario);renderTimeline();
+  $('downloadButton').disabled=false;
+  $('exportBiButton').disabled=!currentUniversalScenario;
+  $('exportBiButton').hidden=!currentUniversalScenario;
+  $('rescheduleButton').disabled=Boolean(currentUniversalScenario);
+  renderTimeline();
 }
 function renderTimeline() {
   if(!lastResult||!currentScenario)return;
@@ -204,22 +250,36 @@ function renderTimeline() {
 }
 function setTab(name){activeView=name;$('tabOptimized').classList.toggle('active',name==='optimized');$('tabBaseline').classList.toggle('active',name==='baseline');renderTimeline()}
 async function run(){
+  if(loadedInputKind !== selectedInputMode) {
+    setStatus(selectedInputMode==='excel'
+      ? 'Please validate and load your Excel file before generating a plan.'
+      : 'Select an example before generating a plan.',true);
+    syncRunAvailability();
+    return;
+  }
+  const runRevision=inputRevision;
   let scenario;try{scenario=readScenario()}catch(err){setStatus('Invalid JSON: '+err.message,true);return}
   const time=Number($('limitInput').value);
   if(!Number.isFinite(time)||time<0.5||time>maxSolverSeconds){setStatus('Time limit must be between 0.5 and '+maxSolverSeconds+' seconds.',true);return}
   if(!currentUniversalScenario){currentScenario=scenario;displayStats(scenario);}
-  const btn=$('runButton');btn.disabled=true;btn.textContent='Optimizing workflow…';
+  const btn=$('runButton');
+  runInProgress=true;syncRunAvailability();
+  btn.textContent='Optimizing workflow…';
   $('runState').textContent='Solving';setStatus('Computing feasible schedule and MILP optimality…');
   try {
     const endpoint=currentUniversalScenario?'/api/universal/run':'/api/run';
     const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time,engine:$('objectiveSelect').value==='makespan'?'milp_highs':$('engineSelect').value,baseline_policy:$('baselinePolicy').value,objective:$('objectiveSelect').value})});
     const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Server error');
+    if(runRevision!==inputRevision) {
+      setStatus('Inputs changed while generating the plan. Previous result discarded; generate again.');
+      return;
+    }
     if(currentUniversalScenario){currentUniversalScenario=scenario;currentScenario=data.normalized_scenario;currentTimeUnit=scenario.time_unit;displayStats(currentScenario);populateStudioEditor();}
     lastResult=data;setTab('optimized');renderResult();await refreshHistory();
     setStatus('Plan ready and validated. '+(data.persisted?'Saved locally. ':'Public demo: download your result to keep it. ')+data.note);
     $('results').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
   }catch(err){$('runState').textContent='Error';setStatus('Cannot run: '+err.message,true)}
-  finally{btn.disabled=false;btn.innerHTML='<span class="run-icon">▶</span> Generate plan'}
+  finally{runInProgress=false;syncRunAvailability();btn.innerHTML='<span class="run-icon">▶</span> Generate plan'}
 }
 
 async function rollingReplan() {
@@ -288,6 +348,10 @@ function acceptImportedEnterprise(data, format) {
   $('kpis').replaceChildren(e('div',format+' data validated. Click Run optimization to generate a schedule.','empty-kpi'));
   $('timeline').replaceChildren(e('div','Imported '+data.scenario.industry+' data. Ready to optimize.','empty-state'));
   setInputMode('excel');
+  loadedInputKind='excel';
+  inputRevision++;
+  setInputMode('excel');
+  syncRunAvailability();
   enterpriseFeedback('Ready: '+data.profile.work_orders+' work orders and '+data.profile.steps+' operations validated. Now select Generate plan.');
 }
 async function importEnterpriseWorkbook() {
@@ -385,6 +449,8 @@ function updateStudioResourceInputs() {
   $('studioChangeoverTime').value=String(machine?.changeover_time||0);
 }
 async function loadUniversal(id) {
+  loadedInputKind=null;inputRevision++;
+  setInputMode('demo');syncRunAvailability();
   const response=await fetch('/api/universal/templates/'+encodeURIComponent(id));
   if(!response.ok)throw Error('Could not load sector template');
   const source=await response.json(), validated=await validateUniversal(source);
@@ -396,6 +462,7 @@ async function loadUniversal(id) {
   $('kpis').replaceChildren(e('div','Run this sector workflow to compare a baseline with optimized resource allocation.','empty-kpi'));
   $('timeline').replaceChildren(e('div','Ready to optimize '+source.industry+'.','empty-state'));
   $('experimentMeta').replaceChildren(e('div','No experiment executed.','placeholder'));
+  loadedInputKind='demo';syncRunAvailability();
   $('runState').textContent='Ready to run';setStatus('Loaded '+source.industry+' workflow — '+source.name+'.');
 }
 async function updateUniversalScenario(kind) {
@@ -445,8 +512,20 @@ async function boot(){
         $('limitInput').value = String(Math.min(4, maxSolverSeconds));
     }
   } catch (error) { /* Local fallback retains documented 60-second cap. */ }
-  $('modeDemo').addEventListener('click',()=>setInputMode('demo'));
+  $('modeDemo').addEventListener('click',async()=>{
+    if(loadedInputKind==='demo') setInputMode('demo');
+    else {
+      try { await loadScenario($('scenarioSelect').value); }
+      catch(error) { setStatus('Could not reload example: '+error.message,true); }
+    }
+  });
   $('modeExcel').addEventListener('click',()=>setInputMode('excel'));
+  for(const id of ['enterpriseWorkbook','enterpriseFiles']){
+    $(id).addEventListener('change',invalidateExcelImport);
+  }
+  for(const id of ['enterpriseName','enterpriseIndustry','enterpriseUnit']){
+    $(id).addEventListener('change',invalidateExcelImport);
+  }
   $('applyOutage').addEventListener('click',applyOutage);
   $('applyShift').addEventListener('click',applyShift);
   $('rescheduleButton').addEventListener('click',rollingReplan);

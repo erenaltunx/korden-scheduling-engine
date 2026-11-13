@@ -85,3 +85,19 @@ def test_public_frontend_serves_new_ui_without_changing_api():
     config=client.get("/api/config")
     assert config.status_code==200
     assert "max_solver_seconds" in config.json()
+
+
+def test_initial_run_requires_loaded_data_and_export_label_is_honest():
+    doc=Markup()
+    doc.feed(HTML)
+    assert "disabled" in doc.tags["runButton"][1]
+    assert "hidden" in doc.tags["exportBiButton"][1]
+    assert "CSV for Power BI (.zip)" in HTML
+    assert "favicon.svg" in HTML
+
+
+def test_upload_mode_keeps_a_validation_gate_and_discard_rule():
+    assert "loadedInputKind !== selectedInputMode" in JS
+    assert "invalidateExcelImport" in JS
+    assert "runRevision!==inputRevision" in JS
+    assert "syncRunAvailability" in JS

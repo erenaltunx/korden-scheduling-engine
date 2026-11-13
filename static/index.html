@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Optera — turn manufacturing work orders into a validated, easy-to-read production schedule." />
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
   <title>Optera | Production Planner</title>
   <link rel="stylesheet" href="/static/styles.css" />
   <link rel="stylesheet" href="/static/planner.css" />
@@ -100,7 +101,7 @@
           <p>Optera checks machine capacity, operation order, maintenance, and any specified working periods.</p></div>
         </div>
         <div class="run-row">
-          <button class="run-button" id="runButton" type="button"><span class="run-icon">▶</span> Generate plan</button>
+          <button class="run-button" id="runButton" type="button" disabled><span class="run-icon">▶</span> Generate plan</button>
           <span class="run-state" id="runState">Ready</span>
         </div>
         <div class="status-line" id="statusLine" role="status" aria-live="polite">Select an example or load your Excel file to begin.</div>
@@ -213,7 +214,7 @@
         <div class="legend" id="chartLegend"></div>
         <div class="export-row">
           <button class="download-button" id="downloadButton" type="button" disabled>Download plan (JSON) ↓</button>
-          <button class="download-button" id="exportBiButton" type="button" disabled>Download Excel / Power BI data ↓</button>
+          <button class="download-button" id="exportBiButton" type="button" hidden disabled>Export CSV for Power BI (.zip) ↓</button>
         </div>
         <details class="advanced-details research-details">
           <summary>Technical solver details &amp; experiment history</summary>
