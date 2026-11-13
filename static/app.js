@@ -221,6 +221,45 @@ async function refreshHistory(){
   }catch(err){history.replaceChildren(e('div','Saved runs cannot be loaded right now.','placeholder'))}
 }
 
+function enterpriseFeedback(message, isError=false) {
+  const output=$('enterpriseFeedback');
+  output.textContent=message;
+  output.style.color=isError?'#a53a3a':'#226f5b';
+  setStatus(message,isError);
+}
+function acceptImportedEnterprise(data, format) {
+  currentUniversalScenario=data.scenario;currentScenario=data.normalized_scenario;currentTimeUnit=data.scenario.time_unit;
+  $('jsonEditor').value=JSON.stringify(data.scenario,null,2);lastResult=null;
+  $('downloadButton').disabled=true;$('exportBiButton').disabled=true;$('rescheduleButton').disabled=true;
+  $('objectiveSelect').value='weighted_tardiness';
+  displayStats(currentScenario);populateStudioEditor();
+  $('kpis').replaceChildren(e('div',format+' data validated. Click Run optimization to generate a schedule.','empty-kpi'));
+  $('timeline').replaceChildren(e('div','Imported '+data.scenario.industry+' data. Ready to optimize.','empty-state'));
+  enterpriseFeedback('Validated '+data.profile.work_orders+' work orders and '+data.profile.steps+' steps. Click Run optimization.');
+}
+async function importEnterpriseWorkbook() {
+  const file=$('enterpriseWorkbook').files[0];
+  if(!file || !file.name.toLowerCase().endsWith('.xlsx') || file.size>320*1024 || !file.size) {
+    enterpriseFeedback('Choose one .xlsx workbook (up to 320 KiB). Download the example above to see the required tabs.',true);return;
+  }
+  const button=$('enterpriseWorkbookImport');button.disabled=true;
+  try {
+    const bytes=new Uint8Array(await file.arrayBuffer());
+    const parts=[];
+    for(let i=0;i<bytes.length;i+=8192) parts.push(String.fromCharCode(...bytes.subarray(i,i+8192)));
+    const workbook_base64=btoa(parts.join(''));
+    const response=await fetch('/api/enterprise/import-xlsx',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({workbook_base64,name:$('enterpriseName').value,
+        industry:$('enterpriseIndustry').value,time_unit:$('enterpriseUnit').value})
+    });
+    const data=await response.json();
+    if(!response.ok) throw Error(typeof data.detail==='string'?data.detail:'Workbook validation failed');
+    acceptImportedEnterprise(data,'Excel');
+  }catch(error){enterpriseFeedback('Excel import rejected: '+error.message,true)}
+  finally{button.disabled=false}
+}
+
 async function importEnterpriseFiles() {
   const selected=[...$('enterpriseFiles').files];
   if(selected.length<3 || selected.length>4) {setStatus('Select 3 required CSV tables and optionally unavailability.csv.',true);return}
@@ -238,14 +277,8 @@ async function importEnterpriseFiles() {
     const resp=await fetch('/api/enterprise/import-csv',{method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({tables,name:$('enterpriseName').value,industry:$('enterpriseIndustry').value,time_unit:$('enterpriseUnit').value})});
     const data=await resp.json();if(!resp.ok)throw Error(typeof data.detail==='string'?data.detail:'CSV import failed');
-    currentUniversalScenario=data.scenario;currentScenario=data.normalized_scenario;currentTimeUnit=data.scenario.time_unit;
-    $('jsonEditor').value=JSON.stringify(data.scenario,null,2);lastResult=null;
-    $('downloadButton').disabled=true;$('exportBiButton').disabled=true;$('rescheduleButton').disabled=true;
-    displayStats(currentScenario);populateStudioEditor();
-    $('kpis').replaceChildren(e('div','CSV import validated. Run optimization to measure the result.','empty-kpi'));
-    $('timeline').replaceChildren(e('div','Imported '+data.scenario.industry+' data. Ready to optimize.','empty-state'));
-    setStatus('Imported '+data.profile.work_orders+' orders and '+data.profile.steps+' steps with independent validation.');
-  }catch(error){setStatus('CSV import refused: '+error.message,true)}
+    acceptImportedEnterprise(data,'CSV');
+  }catch(error){enterpriseFeedback('CSV import rejected: '+error.message,true)}
   finally{button.disabled=false}
 }
 async function exportBi() {
@@ -361,6 +394,7 @@ async function boot(){
   } catch (error) { /* Local fallback retains documented 60-second cap. */ }
   $('applyOutage').addEventListener('click',applyOutage);
   $('rescheduleButton').addEventListener('click',rollingReplan);
+  $('enterpriseWorkbookImport').addEventListener('click',importEnterpriseWorkbook);
   $('enterpriseImport').addEventListener('click',importEnterpriseFiles);$('exportBiButton').addEventListener('click',exportBi);
   $('runButton').addEventListener('click',run);$('tabOptimized').addEventListener('click',()=>setTab('optimized'));
   $('tabBaseline').addEventListener('click',()=>setTab('baseline'));$('downloadButton').addEventListener('click',downloadResult);

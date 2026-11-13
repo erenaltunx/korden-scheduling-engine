@@ -4,7 +4,7 @@
 
 OPTERA is an independent, local-first **finite-capacity manufacturing scheduling** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
-**Version:** 0.12.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+**Version:** 0.13.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
 
 
 ## v0.10 — Harder, more honest manufacturing evidence
@@ -18,6 +18,12 @@ python research_lab.py --count-per-profile 20 --stress-count 10 --seed-base 2300
 ~~~
 
 See [research evidence and caveats](docs/ENGINEERING_EVIDENCE_V1.md). Detailed CSV/JSON are produced on demand; GitHub CI also uploads a smaller fixed-seed smoke report.
+
+## v0.13 — Production-planner Excel onboarding
+
+Optera can now **download a fictional manufacturing example workbook**, load a single edited **.xlsx** containing resources, orders, steps and optional downtime tabs, report sheet/cell validation errors, and compile the same strictly checked production model used for CSV input. No macros, formulas, links, hidden ERP credentials or unsupported constraints are executed. The user then clicks **Run optimization** to receive a verified Gantt schedule and KPI comparison.
+
+**Try without installation:** open GitHub Codespaces, or deploy the stateless synthetic-data-only Render demo using [Render Dashboard](https://dashboard.render.com/). The `render.yaml` file is a deployment recipe, **not evidence of a currently running public website**. For confidential production data, run locally; do not upload to a public demo.
 
 ## v0.12 — Faster feasible plans for congested CNC cells (hybrid search + MILP)
 
