@@ -105,6 +105,11 @@
           <span class="run-state" id="runState">Ready</span>
         </div>
         <div class="status-line" id="statusLine" role="status" aria-live="polite">Select an example or load your Excel file to begin.</div>
+        <section id="planningHelp" class="planning-help" role="alert" aria-live="assertive" hidden>
+          <div class="planning-help-header"><span class="planning-help-symbol" aria-hidden="true">!</span><h3 id="planningHelpTitle">Check your production data</h3></div>
+          <p id="planningHelpExplanation"></p>
+          <p class="planning-help-next"><strong>What you can do:</strong> <span id="planningHelpAction"></span></p>
+        </section>
 
         <details class="advanced-details" id="advancedOptions">
           <summary>Advanced settings &amp; what-if scenarios <span class="optional-tag">Optional</span></summary>
