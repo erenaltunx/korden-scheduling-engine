@@ -12,7 +12,7 @@
 <div class="app-layout">
   <aside class="sidebar">
     <div class="brand"><span class="brand-symbol">O</span><div><div class="brand-title">OPTERA<span class="brand-dot">.</span></div><div class="brand-sub">PRODUCTION SCHEDULING</div></div></div>
-    <div class="sidebar-intro">Scenario control <span class="version">v0.12</span></div>
+    <div class="sidebar-intro">Scenario control <span class="version">v0.9</span></div>
     <div class="control-group">
       <label for="scenarioSelect">Choose a workflow</label>
       <select id="scenarioSelect"><option>Loading…</option></select>
@@ -96,16 +96,23 @@
       <section class="industry-studio" aria-labelledby="enterpriseTitle">
         <div class="studio-heading"><div><div class="hero-eyebrow">ENTERPRISE DATA BRIDGE</div>
         <h2 id="enterpriseTitle">Plan from your own tables.</h2>
-        <p>Select CSV resources, orders, steps and optional unavailability tables. No credentials or live ERP connection required.</p>
-        </div><span class="version">CSV / SQL / POWER BI</span></div>
+        <p>Load your production-cell data from one Excel workbook. Your data is validated before scheduling; no ERP connection or credentials required.</p>
+        </div><span class="version">EXCEL / CSV / MILP</span></div>
+        <p class="studio-help">1. Download the editable manufacturing example. 2. Fill in your machines, work orders and operations. 3. Upload the Excel workbook and review errors. 4. Run optimization.</p>
+        <p><a href="/api/enterprise/template-xlsx" class="secondary-button" download="optera-manufacturing-example.xlsx">Download manufacturing Excel example (.xlsx)</a></p>
         <div class="studio-edit-grid">
-          <label>Workflow name<input type="text" id="enterpriseName" value="Imported operations" maxlength="100" /></label>
-          <label>Industry<input type="text" id="enterpriseIndustry" value="Service operations" maxlength="100" /></label>
+          <label>Workflow name<input type="text" id="enterpriseName" value="My production cell" maxlength="100" /></label>
+          <label>Industry<input type="text" id="enterpriseIndustry" value="Manufacturing" maxlength="100" /></label>
           <label>Time unit<select id="enterpriseUnit"><option value="hour">Hours</option><option value="minute">Minutes</option></select></label>
-          <label>CSV files (3 or 4)<input id="enterpriseFiles" type="file" accept=".csv,text/csv" multiple /></label>
+          <label>Excel workbook (.xlsx)<input id="enterpriseWorkbook" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" /></label>
         </div>
-        <button class="secondary-button" id="enterpriseImport" type="button">Validate and load CSV tables</button>
-        <p class="studio-help">File names: <code>resources.csv</code>, <code>orders.csv</code>, <code>steps.csv</code>, optional <code>unavailability.csv</code>. Duplicate, unknown, or unsupported fields are rejected.</p>
+        <button class="secondary-button" id="enterpriseWorkbookImport" type="button">Validate and load Excel workbook</button>
+        <p class="studio-help" id="enterpriseFeedback" role="status" aria-live="polite">No file loaded. Example workbook includes the required resources, orders and steps sheets.</p>
+        <details class="studio-help"><summary>Advanced: upload separate CSV tables instead</summary>
+          <label>CSV files (3 or 4)<input id="enterpriseFiles" type="file" accept=".csv,text/csv" multiple /></label>
+          <button class="secondary-button" id="enterpriseImport" type="button">Validate and load CSV tables</button>
+          <p>Expected files: <code>resources.csv</code>, <code>orders.csv</code>, <code>steps.csv</code>, optional <code>unavailability.csv</code>.</p>
+        </details>
       </section>
       <div class="section-title"><div><h2>Performance benchmark</h2><p>Classical dispatching baseline vs. mixed-integer linear programming</p></div><div class="run-state" id="runState">Ready to run</div></div>
       <div class="kpis" id="kpis"><div class="empty-kpi">Run a scenario to generate your first measured benchmark.</div></div>
@@ -120,7 +127,7 @@
         <section class="workspace-panel compact"><h2>Experiment metadata</h2><div id="experimentMeta" class="experiment-list"><div class="placeholder">No experiment executed.</div></div><div id="historyPanel"><h2 class="history-heading">Saved experiment history</h2><div id="savedHistory" class="experiment-list"><div class="placeholder">Loading saved experiments…</div></div></div></section>
         <section class="workspace-panel compact"><h2>Research integrity</h2><div class="research-note">Measured improvements apply <strong>only to the selected scenario and baseline</strong>. A solver's optimal result refers to the mathematical model, not to real-world savings. Results must be validated before CV use.</div><button id="downloadButton" class="download-button" disabled>Export full experiment JSON ↓</button><button id="exportBiButton" class="download-button" disabled>Export Power BI-ready CSV tables ↓</button></section>
       </div>
-      <footer>OPTERA / v0.12 · Finite-Capacity Production Scheduling &amp; Recovery · Independent engineering project</footer>
+      <footer>OPTERA / v0.9 · Finite-Capacity Production Scheduling &amp; Recovery · Independent engineering project</footer>
     </div>
   </main>
 </div>

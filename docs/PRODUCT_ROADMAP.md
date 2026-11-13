@@ -20,6 +20,13 @@ A fixed-seed 10-congested-workshop time-budget study found guarded weighted tard
 
 **Next gate:** field-level production constraints (shift calendars in all three model/verifier/baseline layers), matched **equal total wall-time** comparison vs MILP alone, additional external known-optimum instances, and a permissioned real work-order sample. No additional sectors or AI layers. Moving above 65 requires demonstrated shift correctness and an externally verifiable demonstration; above 75 requires real operational data or independent external validation.
 
+## v0.13 — Guided manufacturing spreadsheet import
+
+- A complete single-workbook Excel importer is available for a small machining-cell pilot: download an editable example, replace the sample orders/resources, validate all tabs and solve using the existing mathematically checked engine.
+- Validation rejects formulas, macros, unknown sheets/columns, oversized archives, unsupported value types and broken resource/step references rather than silently inferring missing data.
+- **Not yet achieved:** real customer data, a verified public deployment or no-setup live application, visual cell-level corrections and full XLSX feature coverage (dates/calendars unsupported).
+- Next gate: two-minute guided usability trial with independent test users; then realistic shifts and recorded baseline scheduling time.
+
 ## Hard boundaries (protect deep specialization)
 
 - Domain: job-shop and flexible job-shop scheduling on machining/fabrication cells, under finite machine and qualified-worker capacity.

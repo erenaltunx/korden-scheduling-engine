@@ -1,6 +1,8 @@
 """OPTERA HTTP adapter: core solver is imported, but never coupled to HTTP or DB."""
 from __future__ import annotations
 import json
+import base64
+import binascii
 import os
 import io
 import zipfile
@@ -17,14 +19,16 @@ from .reschedule import reschedule
 from .public_benchmarks import PUBLIC_INSTANCES, load_jsplib
 from .universal import normalize_universal, describe_universal
 from .data_pipeline import import_planning_csv, reporting_tables, make_csv, REPORT_COLUMNS
+from .xlsx_bridge import workbook_to_csv_tables, make_example_workbook
 from .storage import get_experiment, list_experiments, save_experiment
 
 ROOT = Path(__file__).resolve().parent.parent
 PUBLIC_DEMO = os.getenv("OPTERA_PUBLIC_DEMO", "0").lower() in {"1", "true", "yes"}
 # Public demo is not multi-tenant: it must NEVER expose or persist private experiments.
 MAX_REQUEST_BYTES = 128 * 1024
+MAX_XLSX_REQUEST_BYTES = 512 * 1024
 PUBLIC_SOLVER_SLOTS = BoundedSemaphore(value=2)
-app = FastAPI(title="OPTERA — Cross-Industry Resource Optimization", version="0.12.0")
+app = FastAPI(title="OPTERA — Cross-Industry Resource Optimization", version="0.13.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
@@ -42,6 +46,13 @@ class UniversalValidateRequest(BaseModel):
 
 class CSVImportRequest(BaseModel):
     tables: dict[str,str]
+    name: str = Field(min_length=1, max_length=100)
+    industry: str = Field(min_length=1, max_length=100)
+    time_unit: Literal['minute','hour'] = 'hour'
+
+
+class ExcelImportRequest(BaseModel):
+    workbook_base64: str = Field(min_length=1, max_length=450_000)
     name: str = Field(min_length=1, max_length=100)
     industry: str = Field(min_length=1, max_length=100)
     time_unit: Literal['minute','hour'] = 'hour'
@@ -86,17 +97,18 @@ def acquire_public_slot():
 @app.middleware("http")
 async def protective_headers_and_size_limit(request: Request, call_next):
     if request.url.path.startswith("/api/") and request.method in {"POST", "PUT", "PATCH"}:
+        size_limit = MAX_XLSX_REQUEST_BYTES if request.url.path == "/api/enterprise/import-xlsx" else MAX_REQUEST_BYTES
         content_length = request.headers.get("content-length")
         if content_length:
             try:
-                if int(content_length) > MAX_REQUEST_BYTES:
-                    return JSONResponse({"detail": "Request exceeds 128 KiB limit"}, status_code=413)
+                if int(content_length) > size_limit:
+                    return JSONResponse({"detail": "Request exceeds configured import size limit"}, status_code=413)
             except ValueError:
                 return JSONResponse({"detail": "Invalid content-length"}, status_code=400)
         # Cap the actual request body too; content-length alone is not sufficient.
         # Public deployment must ALSO configure a size limit at the ingress/proxy.
         raw = await request.body()
-        if len(raw) > MAX_REQUEST_BYTES:
+        if len(raw) > size_limit:
             return JSONResponse({"detail": "Request exceeds 128 KiB limit"}, status_code=413)
     response = await call_next(request)
     response.headers["X-Content-Type-Options"] = "nosniff"
@@ -113,7 +125,7 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "application": "OPTERA", "version": "0.12.0"}
+    return {"status": "ok", "application": "OPTERA", "version": "0.13.0"}
 
 
 @app.get("/api/config")
@@ -278,6 +290,34 @@ def enterprise_import_csv(payload: CSVImportRequest):
         return {'scenario':source,'profile':describe_universal(source),
                 'normalized_scenario':normalize_universal(source)}
     except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.get('/api/enterprise/template-xlsx')
+def enterprise_template_xlsx():
+    """Single editable, fictional manufacturing workbook; no customer data."""
+    sample = ROOT / 'samples' / 'enterprise' / 'manufacturing_flexible_crew'
+    tables = {name: (sample / f'{name}.csv').read_text(encoding='utf-8-sig')
+              for name in ('resources', 'orders', 'steps', 'unavailability')
+              if (sample / f'{name}.csv').is_file()}
+    output = io.BytesIO(make_example_workbook(tables))
+    return StreamingResponse(output, media_type=(
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'),
+        headers={'Content-Disposition': 'attachment; filename="optera-manufacturing-example.xlsx"',
+                 'Cache-Control': 'no-store'})
+
+
+@app.post('/api/enterprise/import-xlsx')
+def enterprise_import_xlsx(payload: ExcelImportRequest):
+    """Read a bounded .xlsx in-memory and reuse the strict validated CSV contract."""
+    try:
+        raw = base64.b64decode(payload.workbook_base64, validate=True)
+        tables = workbook_to_csv_tables(raw)
+        source = import_planning_csv(tables, name=payload.name,
+                                     industry=payload.industry, time_unit=payload.time_unit)
+        return {'scenario': source, 'profile': describe_universal(source),
+                'normalized_scenario': normalize_universal(source)}
+    except (ValueError, binascii.Error) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
 
