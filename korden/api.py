@@ -13,6 +13,7 @@ from .baseline import POLICIES
 from .service import compare
 from .reschedule import reschedule
 from .public_benchmarks import PUBLIC_INSTANCES, load_jsplib
+from .universal import normalize_universal, describe_universal
 from .storage import get_experiment, list_experiments, save_experiment
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -20,7 +21,7 @@ PUBLIC_DEMO = os.getenv("KORDEN_PUBLIC_DEMO", "0").lower() in {"1", "true", "yes
 # Public demo is not multi-tenant: it must NEVER expose or persist private experiments.
 MAX_REQUEST_BYTES = 128 * 1024
 PUBLIC_SOLVER_SLOTS = BoundedSemaphore(value=2)
-app = FastAPI(title="KORDEN — Industrial Scheduling & Optimization", version="0.5.0")
+app = FastAPI(title="KORDEN — Cross-Industry Resource Optimization", version="0.6.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
@@ -30,6 +31,10 @@ class RunRequest(BaseModel):
     engine: str = Field(default="milp_highs", max_length=40)
     baseline_policy: Literal["edd", "fifo", "spt", "wspt"] = "edd"
     objective: Literal["weighted_tardiness", "makespan"] = "weighted_tardiness"
+
+
+class UniversalValidateRequest(BaseModel):
+    scenario: dict
 
 
 class RescheduleRequest(BaseModel):
@@ -91,7 +96,7 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "application": "KORDEN", "version": "0.5.0"}
+    return {"status": "ok", "application": "KORDEN", "version": "0.6.0"}
 
 
 @app.get("/api/config")
@@ -99,7 +104,8 @@ def config():
     return {"public_demo": PUBLIC_DEMO, "max_solver_seconds": 5 if PUBLIC_DEMO else 60,
             "max_orders": 8 if PUBLIC_DEMO else 30, "schema_version": 1,
             "archive_enabled": not PUBLIC_DEMO, "baseline_policies": POLICIES,
-            "objectives": ['weighted_tardiness', 'makespan']}
+            "objectives": ['weighted_tardiness', 'makespan'],
+            "universal_schema_version": 1}
 
 
 @app.get("/api/scenarios")
@@ -187,3 +193,59 @@ def get_public_benchmark(name: str):
     if name not in PUBLIC_INSTANCES:
         raise HTTPException(status_code=404, detail='Unknown benchmark')
     return load_jsplib(name)
+
+
+UNIVERSAL_TEMPLATE_DIR = ROOT / 'samples' / 'universal'
+
+
+@app.get('/api/universal/templates')
+def universal_templates():
+    result = []
+    for path in sorted(UNIVERSAL_TEMPLATE_DIR.glob('*.json')):
+        source = json.loads(path.read_text(encoding='utf-8'))
+        result.append({'id': path.stem, **describe_universal(source)})
+    return result
+
+
+@app.get('/api/universal/templates/{template_id}')
+def universal_template(template_id: str):
+    if not template_id.isascii() or not template_id.replace('_', '').isalnum():
+        raise HTTPException(status_code=404, detail='Unknown sector template')
+    path = UNIVERSAL_TEMPLATE_DIR / (template_id + '.json')
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail='Unknown sector template')
+    return json.loads(path.read_text(encoding='utf-8'))
+
+
+@app.post('/api/universal/validate')
+def universal_validate(payload: UniversalValidateRequest):
+    try:
+        normalized = normalize_universal(payload.scenario)
+        return {'valid': True, 'profile': describe_universal(payload.scenario),
+                'normalized_scenario': normalized}
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.post('/api/universal/run')
+def universal_run(payload: RunRequest):
+    try:
+        normalized = normalize_universal(payload.scenario)
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    public_solver_check(normalized, payload.time_limit)
+    acquire_public_slot()
+    try:
+        result = compare(normalized, payload.time_limit, engine=payload.engine,
+                         baseline_policy=payload.baseline_policy, objective=payload.objective)
+        result['domain'] = describe_universal(payload.scenario)
+        result['normalized_scenario'] = normalized
+        result['note'] = ('Scenario-based cross-industry resource planning. '
+                          'Single resource per step; no travel, team assignment or real deployment savings.')
+        if PUBLIC_DEMO:
+            return {**result, 'persisted': False}
+        run_id = save_experiment(payload.scenario, result)
+        return {**result, 'run_id': run_id, 'persisted': True}
+    finally:
+        if PUBLIC_DEMO:
+            PUBLIC_SOLVER_SLOTS.release()

@@ -1,6 +1,8 @@
 'use strict';
 const $ = (id) => document.getElementById(id);
 let currentScenario = null;
+let currentUniversalScenario = null;
+let currentTimeUnit = 'hour';
 let lastResult = null;
 let activeView = 'optimized';
 let maxSolverSeconds = 60;
@@ -19,6 +21,7 @@ function refreshMachineOptions(s) {
   if(s.machines.some(m=>m.id===prev)) select.value=prev;
 }
 function applyOutage() {
+  if (currentUniversalScenario) {setStatus('Use Resource Studio to change unavailability for this cross-industry workflow.', true);return;}
   let scenario;
   try {scenario=readScenario()} catch(err) {setStatus('Invalid JSON: '+err.message,true);return}
   const mid=$('outageMachine').value,start=Number($('outageStart').value),end=Number($('outageEnd').value);
@@ -40,17 +43,20 @@ function applyOutage() {
 function displayStats(s) {
   refreshMachineOptions(s);
   const box=$('scenarioStats');box.replaceChildren();
-  const vals=[['Machines', s.machines.length],['Production orders',s.jobs.length],
+  const vals=[['Resources', s.machines.length],['Work orders',s.jobs.length],
     ['Operations',s.jobs.reduce((a,j)=>a+j.operations.length,0)],
-    ['Maintenance windows',s.machines.reduce((a,m)=>a+(m.downtime||[]).length,0)]];
+    ['Unavailable intervals',s.machines.reduce((a,m)=>a+(m.downtime||[]).length,0)]];
   for(const [key,val] of vals){const r=e('div',undefined,'scenario-stat-row');r.append(e('span',key),e('strong',val));box.append(r)}
 }
 function readScenario() {
   const parsed=JSON.parse($('jsonEditor').value);
-  if(!parsed.jobs||!parsed.machines)throw new Error('JSON needs machines and jobs arrays.');
+  if(currentUniversalScenario){if(!parsed.resources||!parsed.work_orders)throw new Error('Expected universal resources and work_orders.');return parsed;}
+  if(!parsed.jobs||!parsed.machines)throw new Error('Expected legacy machines and jobs.');
   return parsed;
 }
 async function loadScenario(name) {
+  if(name.startsWith('industry:')){await loadUniversal(name.slice(9));return;}
+  currentUniversalScenario = null;currentTimeUnit = 'hour';$('studioEditor').hidden=true;
   const isPublic=name.startsWith('public:');
   const res=await fetch(isPublic?('/api/public-benchmarks/'+encodeURIComponent(name.slice(7))):('/api/scenarios/'+encodeURIComponent(name)));
   $('objectiveSelect').value=isPublic?'makespan':'weighted_tardiness';if(!res.ok)throw Error('Could not load scenario');
@@ -78,16 +84,16 @@ function renderResult() {
   if(isMakespan){
     const target=currentScenario.benchmark_known_optimum_makespan;
     area.replaceChildren(
-      kpi('Makespan · '+(currentScenario.benchmark_source?'time units':'hours'),o.makespan,b.makespan, improvement===null?'Baseline is zero':`${improvement.toFixed(2)}% shorter vs. ${baselineName}`,o.makespan<b.makespan),
+      kpi('Makespan · '+(currentScenario.benchmark_source?'time units':currentTimeUnit+'s'),o.makespan,b.makespan, improvement===null?'Baseline is zero':`${improvement.toFixed(2)}% shorter vs. ${baselineName}`,o.makespan<b.makespan),
       kpi('Published benchmark optimum',target??'N/A',null, target===undefined?'Not a public benchmark':o.makespan===target?'Reached published value':'Reference target',false),
-      kpi('Scheduled operations',o.machine_busy_hours?Object.values(o.machine_busy_hours).reduce((a,b)=>a+b,0)+' machine-hours':'—',null,'Total processing machine-hours',false),
+      kpi('Scheduled operations',o.machine_busy_hours?Object.values(o.machine_busy_hours).reduce((a,b)=>a+b,0)+' resource-time units':'—',null,'Total processing time',false),
       kpi('Solve time · sec',sol.solve_seconds.toFixed(3),null,sol.optimality_proven?'Mathematical optimum proven':'Feasible result; proof not obtained',false)
     );
   }else{
     area.replaceChildren(
       kpi('Weighted tardiness',o.weighted_tardiness,b.weighted_tardiness,improvement===null?'Selected baseline has zero tardiness':`${improvement.toFixed(2)}% improvement vs. ${baselineName}`, o.weighted_tardiness<b.weighted_tardiness),
       kpi('Late customer orders',o.late_jobs,b.late_jobs,`${currentScenario.jobs.length} total orders`,o.late_jobs<b.late_jobs),
-      kpi('Makespan · hours',o.makespan,b.makespan,'Final completion time',o.makespan<b.makespan),
+      kpi('Makespan · '+currentTimeUnit+'s',o.makespan,b.makespan,'Final completion time',o.makespan<b.makespan),
       kpi('Solve time · sec',sol.solve_seconds.toFixed(3),null,sol.optimality_proven?'Mathematical optimum proven':'Best feasible plan / time limit',false)
     );
   }
@@ -102,7 +108,7 @@ function renderResult() {
       meta('Changed remaining operations',lastResult.stability.rescheduled_operations),
       meta('Machine reassignments',lastResult.stability.machine_reassignments),
       meta('Start-time shift (hours)',lastResult.stability.total_absolute_start_shift_hours)] : [])); 
-  $('downloadButton').disabled=false;$('rescheduleButton').disabled=false;renderTimeline();
+  $('downloadButton').disabled=false;$('rescheduleButton').disabled=Boolean(currentUniversalScenario);renderTimeline();
 }
 function renderTimeline() {
   if(!lastResult||!currentScenario)return;
@@ -114,7 +120,7 @@ function renderTimeline() {
   const frame=e('div',undefined,'chart-frame');
   const jobIds=currentScenario.jobs.map(j=>j.id);const jobColors=Object.fromEntries(jobIds.map((name,i)=>[name,COLORS[i%COLORS.length]]));
   const percent=v=>(100*v/horizon).toFixed(4)+'%';
-  const unit=currentScenario.benchmark_source?'units':'h';
+  const unit=currentScenario.benchmark_source?'units':(currentTimeUnit==='minute'?'min':'h');
   const replanningClock=lastResult.planning_clock;
   for(const machine of machines){
     const row=e('div',undefined,'timeline-row');row.append(e('div',machine.id,'machine-name'));
@@ -143,17 +149,21 @@ async function run(){
   let scenario;try{scenario=readScenario()}catch(err){setStatus('Invalid JSON: '+err.message,true);return}
   const time=Number($('limitInput').value);
   if(!Number.isFinite(time)||time<0.5||time>maxSolverSeconds){setStatus('Time limit must be between 0.5 and '+maxSolverSeconds+' seconds.',true);return}
-  currentScenario=scenario;displayStats(scenario);const btn=$('runButton');btn.disabled=true;btn.textContent='Optimizing production…';
+  if(!currentUniversalScenario){currentScenario=scenario;displayStats(scenario);}
+  const btn=$('runButton');btn.disabled=true;btn.textContent='Optimizing workflow…';
   $('runState').textContent='Solving';setStatus('Computing feasible schedule and MILP optimality…');
   try {
-    const response=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time,baseline_policy:$('baselinePolicy').value,objective:$('objectiveSelect').value})});
+    const endpoint=currentUniversalScenario?'/api/universal/run':'/api/run';
+    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time,baseline_policy:$('baselinePolicy').value,objective:$('objectiveSelect').value})});
     const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Server error');
+    if(currentUniversalScenario){currentUniversalScenario=scenario;currentScenario=data.normalized_scenario;currentTimeUnit=scenario.time_unit;displayStats(currentScenario);populateStudioEditor();}
     lastResult=data;setTab('optimized');renderResult();await refreshHistory();setStatus('Completed and validated. '+(data.persisted?'Saved to your local experiment history. ': 'Public demo, export results to keep them. ')+data.note);
   }catch(err){$('runState').textContent='Error';setStatus('Cannot run: '+err.message,true)}
   finally{btn.disabled=false;btn.innerHTML='<span class="run-icon">▶</span> Run optimization'}
 }
 
 async function rollingReplan() {
+  if(currentUniversalScenario){setStatus('Rolling rescheduling for universal workflows requires a separate validated resource adapter; not available yet.',true);return;}
   if(!lastResult || !currentScenario){setStatus('Run an optimization first to establish a committed schedule.',true);return}
   const now=Number($('rescheduleNow').value), start=Number($('outageStart').value),end=Number($('outageEnd').value);
   const mid=$('outageMachine').value, time=Number($('limitInput').value);
@@ -176,7 +186,7 @@ async function rollingReplan() {
   finally{button.disabled=!lastResult}
 }
 
-function downloadResult(){if(!lastResult)return;const b=new Blob([JSON.stringify({scenario:currentScenario,experiment:lastResult},null,2)],{type:'application/json'});
+function downloadResult(){if(!lastResult)return;const b=new Blob([JSON.stringify({scenario:currentUniversalScenario||currentScenario,experiment:lastResult},null,2)],{type:'application/json'});
   const link=document.createElement('a');link.href=URL.createObjectURL(b);link.download='korden_experiment_'+new Date().toISOString().slice(0,10)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}
 async function refreshHistory(){
   const history=$('savedHistory');if(!history||$('historyPanel').hidden)return;
@@ -190,8 +200,10 @@ async function refreshHistory(){
       button.addEventListener('click',async()=>{
         try{
           const response=await fetch('/api/history/'+item.id);if(!response.ok)throw Error('Could not retrieve saved experiment');
-          const record=await response.json();currentScenario=record.scenario;
-          $('jsonEditor').value=JSON.stringify(currentScenario,null,2);displayStats(currentScenario);
+          const record=await response.json();currentUniversalScenario=record.scenario.resources?record.scenario:null;
+          currentTimeUnit=currentUniversalScenario?.time_unit||'hour';currentScenario=currentUniversalScenario?record.result.normalized_scenario:record.scenario;
+          $('jsonEditor').value=JSON.stringify(record.scenario,null,2);displayStats(currentScenario);
+          $('studioEditor').hidden=!currentUniversalScenario;if(currentUniversalScenario)populateStudioEditor();
           lastResult={...record.result,run_id:record.id,persisted:true};setTab('optimized');renderResult();
           setStatus('Recovered validated experiment '+record.id.slice(0,8)+' from your local history.');
         }catch(err){setStatus(err.message,true)}
@@ -200,6 +212,69 @@ async function refreshHistory(){
     }
   }catch(err){history.replaceChildren(e('div','Saved runs cannot be loaded right now.','placeholder'))}
 }
+
+async function validateUniversal(source) {
+  const response=await fetch('/api/universal/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario:source})});
+  const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Invalid universal workflow');
+  return data;
+}
+function populateStudioEditor() {
+  const src=currentUniversalScenario;if(!src)return;
+  const orders=$('studioOrder'),selected=orders.value;orders.replaceChildren();
+  for(const o of src.work_orders){const option=e('option',o.name);option.value=o.id;orders.append(option)}
+  if(src.work_orders.some(o=>o.id===selected))orders.value=selected;
+  updateStudioOrderInputs();
+  const resources=$('studioResource'),old=resources.value;resources.replaceChildren();
+  for(const r of src.resources){const option=e('option',r.name+' · '+r.capabilities.join(', '));option.value=r.id;resources.append(option)}
+  if(src.resources.some(r=>r.id===old))resources.value=old;
+  $('studioEditor').hidden=false;
+  $('industrySummary').textContent=src.industry+' · '+src.resources.length+' resources · '+src.work_orders.length+' work orders · '+src.time_unit+' grid. Each step occupies one qualified resource; unsupported real-world constraints remain explicitly excluded.';
+}
+function updateStudioOrderInputs() {
+  const src=currentUniversalScenario;if(!src)return;
+  const found=src.work_orders.find(o=>o.id===$('studioOrder').value);
+  if(found){$('studioDue').value=String(found.due_at);$('studioPriority').value=String(found.priority)}
+}
+async function loadUniversal(id) {
+  const response=await fetch('/api/universal/templates/'+encodeURIComponent(id));
+  if(!response.ok)throw Error('Could not load sector template');
+  const source=await response.json(), validated=await validateUniversal(source);
+  currentUniversalScenario=source;currentTimeUnit=source.time_unit;currentScenario=validated.normalized_scenario;
+  $('jsonEditor').value=JSON.stringify(source,null,2);$('objectiveSelect').value='weighted_tardiness';
+  $('scenarioSelect').value='industry:'+id;$('industrySelect').value=id;
+  lastResult=null;$('downloadButton').disabled=true;$('rescheduleButton').disabled=true;
+  displayStats(currentScenario);populateStudioEditor();
+  $('kpis').replaceChildren(e('div','Run this sector workflow to compare a baseline with optimized resource allocation.','empty-kpi'));
+  $('timeline').replaceChildren(e('div','Ready to optimize '+source.industry+'.','empty-state'));
+  $('experimentMeta').replaceChildren(e('div','No experiment executed.','placeholder'));
+  $('runState').textContent='Ready to run';setStatus('Loaded '+source.industry+' workflow — '+source.name+'.');
+}
+async function updateUniversalScenario(kind) {
+  if(!currentUniversalScenario)return;
+  const draft=JSON.parse(JSON.stringify(currentUniversalScenario));
+  if(kind==='order'){
+    const target=draft.work_orders.find(o=>o.id===$('studioOrder').value);
+    const due=Number($('studioDue').value),priority=Number($('studioPriority').value);
+    if(!target||!Number.isInteger(due)||due<0||due>10000||!Number.isInteger(priority)||priority<1||priority>100){setStatus('Enter a valid due time and a priority between 1 and 100.',true);return}
+    target.due_at=due;target.priority=priority;
+  } else {
+    const target=draft.resources.find(r=>r.id===$('studioResource').value);
+    const start=Number($('studioDownStart').value),end=Number($('studioDownEnd').value);
+    if(!target||!Number.isInteger(start)||!Number.isInteger(end)||start<0||end>10000||end<=start){setStatus('Enter a valid resource-unavailability interval.',true);return}
+    const windows=[...(target.unavailable||[]),{start,end}].sort((a,b)=>a.start-b.start);const merged=[];
+    for(const win of windows){const last=merged[merged.length-1];if(last&&win.start<=last.end)last.end=Math.max(last.end,win.end);else merged.push({...win})}
+    target.unavailable=merged;
+  }
+  try{
+    const validated=await validateUniversal(draft);
+    currentUniversalScenario=draft;currentScenario=validated.normalized_scenario;
+    $('jsonEditor').value=JSON.stringify(draft,null,2);
+    lastResult=null;$('downloadButton').disabled=true;$('rescheduleButton').disabled=true;
+    displayStats(currentScenario);populateStudioEditor();
+    setStatus('Resource/work order update validated. Run optimization to compare the revised schedule.');
+  }catch(err){setStatus('Update rejected without changing your scenario: '+err.message,true)}
+}
+
 async function boot(){
   // Align the solver control with the public demo's resource limits.
   try {
@@ -219,6 +294,10 @@ async function boot(){
   $('tabBaseline').addEventListener('click',()=>setTab('baseline'));$('downloadButton').addEventListener('click',downloadResult);
   $('toggleEditor').addEventListener('click',()=>{$('editorPanel').hidden=!$('editorPanel').hidden});
   $('scenarioSelect').addEventListener('change',async(ev)=>{try{await loadScenario(ev.target.value)}catch(err){setStatus(err.message,true)}});
+  $('loadIndustryButton').addEventListener('click',async()=>{try{await loadUniversal($('industrySelect').value)}catch(err){setStatus(err.message,true)}});
+  $('studioOrder').addEventListener('change',updateStudioOrderInputs);
+  $('studioApplyOrder').addEventListener('click',()=>updateUniversalScenario('order'));
+  $('studioApplyDown').addEventListener('click',()=>updateUniversalScenario('resource')); 
   try{const resp=await fetch('/api/scenarios');if(!resp.ok)throw Error('Could not load scenarios');
     const scenarios=await resp.json();const selector=$('scenarioSelect');selector.replaceChildren();
     for(const s of scenarios){const opt=e('option',s.name);opt.value=s.id;selector.append(opt)}
@@ -228,6 +307,12 @@ async function boot(){
         const opt=e('option',s.name);opt.value='public:'+s.id;selector.append(opt);
       }}
     }
+    try{const industryResponse=await fetch('/api/universal/templates');if(industryResponse.ok){
+      const templates=await industryResponse.json();const industrySelector=$('industrySelect');industrySelector.replaceChildren();
+      for(const item of templates){const opt=e('option',item.industry+' · '+item.name);opt.value=item.id;industrySelector.append(opt);
+        const opt2=e('option',item.industry+' · '+item.name);opt2.value='industry:'+item.id;selector.append(opt2);}
+      if(templates.length)$('industrySummary').textContent='Choose one of '+templates.length+' sector templates, then edit priorities and availability without writing JSON.';
+    }}catch(err){setStatus('Sector templates are temporarily unavailable: '+err.message,true);}
     const chosen=scenarios.find(x=>x.id==='assembly_cell')||scenarios[0];if(chosen){selector.value=chosen.id;await loadScenario(chosen.id)}
   }catch(err){setStatus(err.message,true)}
   await refreshHistory();

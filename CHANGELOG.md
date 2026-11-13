@@ -26,3 +26,11 @@
 - Added Docker Compose persistent volume, fixed direct dependency versions, cross-platform Windows/Linux CI, container smoke checks and Dependabot update PRs.
 - Added recovery, architecture, security and quality-gate documentation.
 - Existing MILP schedule objective and baseline preserved, with regression tests.
+
+## v0.6.0 — Sector-neutral resource studio (2026-11-13)
+- Universal v1 domain contract: resources, capabilities, unavailability, work orders and sequential steps; strict fail-closed input validation.
+- Working manufacturing, field-service and warehouse scenarios run through the same MILP/HiGHS engine and independent schedule validator.
+- API: template discovery, scenario normalization/validation, cross-industry optimization; local persistence, public-demo safeguards retained.
+- Guided web editing of order due times, priorities and resource unavailability without writing JSON.
+- Cross-industry benchmark tool + real CI checks; domain-scoped technical vision and explicit unsupported-constraint matrix.
+- Existing v1 factory scenarios, historic experiments and optimizer behavior preserved.

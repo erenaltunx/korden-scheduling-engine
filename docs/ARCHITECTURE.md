@@ -43,3 +43,12 @@ Future shift calendars, setups and disruptions should be separate focused module
 - A reference schedule must pass the original scenario's independent feasibility checker before it is accepted. Job and machine definitions cannot change during disruption replay.
 - Research benchmarks use **makespan** and public source provenance; business delay experiments use **weighted tardiness**. Mixing objective outcomes is prohibited.
 - Stability is instrumentation, not a minimization term yet. A change to the objective requires an explicit versioned methodology and independent regression tests.
+
+
+## v0.6 cross-industry adapter, not a duplicated optimizer
+
+`korden/universal.py` accepts strictly versioned `resources` and `work_orders` and maps them onto the existing validated machine/job primitive. Resource skills are evaluated against the complete set of required capabilities. Resource availability windows are copied into the engine's downtime constraints. Sector-specific names, kinds, and time-unit metadata remain with the source scenario. The universal API results contain the compiled scenario and model-scope statement for auditability.
+
+The adapter is limited to **exactly one exclusive resource per step, sequential steps per work order**. It rejects unknown keys (including attempted capacity, simultaneous-worker, inventory or travel constraints). This is essential: a solver cannot claim feasibility for rules it did not encode. Future adapters should be separate, versioned modules and support constraint coverage reports with negative tests.
+
+The browser's guided editor only changes the canonical JSON via the API's validation endpoint. Resource-kind labels and industries never affect solver semantics; capabilities and unavailability do. See `VISION_AND_DOMAIN_CONTRACT.md` for the intended end-state and explicit non-goals.

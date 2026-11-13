@@ -2,9 +2,23 @@
 
 **Plan smarter. Produce better.**
 
-KORDEN is an independent, local-first **operations research** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
+KORDEN is an independent, local-first **cross-industry operations research** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
-**Version:** 0.5.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+**Version:** 0.6.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+
+## Cross-industry resource studio (v0.6)
+
+KORDEN now supports an explicit **universal resource / capability / workflow contract**. Use the **Cross-Industry Resource Studio** in the web UI to choose a manufacturing, field-service or warehouse workflow, edit due times/priorities and block resource availability without hand-writing JSON. The sector-specific data is validated and compiled into the *same* tested MILP/HiGHS engine; all existing factory scenarios continue working.
+
+The v1 domain supports a **single exclusive resource per sequential step**, skill matching, integer minutes or hours and fixed unavailability. It intentionally rejects unknown or unsupported constraints: it does **not** solve multi-worker staffing, driving routes, inventories, setup times or complex calendars yet. This is a decision-engine foundation, **not** a complete production operations system. See [vision, actual scope and architecture](docs/VISION_AND_DOMAIN_CONTRACT.md).
+
+```bash
+python universal_benchmark.py --limit 8 --out artifacts/cross_industry
+```
+
+The three fictional sample sectors are compared against the strongest of EDD/FIFO/SPT/WSPT for each workflow. **Results are synthetic, per-sector and in different time units**, so they are not claims about live industrial savings. See [cross-industry audit](docs/CROSS_INDUSTRY_EXPERIMENTS.md) and machine-readable outputs in `docs/benchmarks/cross_industry_v06.*`.
+
+**API endpoints:** `GET /api/universal/templates`, `GET /api/universal/templates/{id}`, `POST /api/universal/validate`, `POST /api/universal/run`. All other legacy APIs remain unchanged.
 
 ## Run with no ZIP or local installation — once published on GitHub
 
@@ -62,7 +76,7 @@ All per-seed results, methodology, exact commands and checksum are published in 
 
 **Two distinct objectives:** weighted job tardiness for business service levels, and makespan for classical job-shop research. The math must use the same objective as its reference benchmark. The new `/api/reschedule` freezes finished/in-progress non-preemptive work at a simulated planning clock, rejects outages that intersect ongoing tasks, and optimizes only work that has not started. The UI supports rolling replan after an initial run. Schedule stability (changed future tasks, machine switches, total start shift) is measured, **not yet an optimization objective**.
 
-**External benchmark:** JSPLIB `ft06` (36 operations): KORDEN finds **55** vs. 71 from the strongest classical rule, and proves model optimality; published optimum = 55. JSPLIB `la01` (50 operations): **666** vs. 1078 heuristic, matching the published optimum of 666 but **not proving it within 15 seconds**. These are *arbitrary benchmark time units*, not factory hours. Benchmarks in `benchmarks/jsplib/`, results under `docs/benchmarks/`. Benchmark numbers are not automatically licensed as KORDEN code; see [`benchmarks/jsplib/NOTICE.md`](benchmarks/jsplib/NOTICE.md).
+**External benchmark:** JSPLIB `ft06` (36 operations): KORDEN finds **55** vs. 71 from the strongest classical rule, and proves model optimality; published optimum = 55. JSPLIB `la01` (50 operations): **666** vs. 1078 heuristic, matching the published optimum of 666 but **not proving it within 15 seconds**. These are *arbitrary benchmark time units*, not factory hours. Benchmarks in `benchmarks/jsplib/`, results under `docs/benchmarks/`.
 
 **20 rolling disruption trials:** 20 synthetic small workshops, aggregate weighted tardiness **833 → 563 (32.41%)** vs feasible rolling EDD, with 20/20 solver proofs. This is simulated research, not claimed production savings. Disruption changes many future tasks; plan stability requires future engineering improvements.
 
