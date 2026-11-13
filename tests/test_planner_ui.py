@@ -101,3 +101,16 @@ def test_upload_mode_keeps_a_validation_gate_and_discard_rule():
     assert "invalidateExcelImport" in JS
     assert "runRevision!==inputRevision" in JS
     assert "syncRunAvailability" in JS
+
+
+def test_failure_explanation_is_accessible_and_hidden_until_needed():
+    doc = Markup()
+    doc.feed(HTML)
+    assert doc.tags["planningHelp"][0] == "section"
+    assert "hidden" in doc.tags["planningHelp"][1]
+    assert doc.tags["planningHelp"][1]["role"] == "alert"
+    for control in ("planningHelpTitle", "planningHelpExplanation", "planningHelpAction"):
+        assert control in doc.tags
+    assert "displayPlanningHelp(err.diagnostic,err.message)" in JS
+    assert "$('planningHelpExplanation').textContent" in JS
+    assert "$('planningHelpAction').textContent" in JS
