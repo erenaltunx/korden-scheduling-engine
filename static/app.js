@@ -12,7 +12,19 @@ function e(tag, text, cls) {
   if (cls) el.className = cls; return el;
 }
 function setStatus(msg, error=false) {
-  $('statusLine').textContent = msg; $('statusLine').style.color = error ? '#f5a2a2' : '#8997b1';
+  const output=$('statusLine');
+  output.textContent=msg;
+  output.style.color=error ? '#ab3434' : '#526b74';
+}
+function setInputMode(mode) {
+  // Only the selected input path is shown; both paths keep their data.
+  const excel=mode==='excel';
+  $('demoPanel').hidden=excel;
+  $('excelPanel').hidden=!excel;
+  $('modeDemo').classList.toggle('active',!excel);
+  $('modeExcel').classList.toggle('active',excel);
+  $('modeDemo').setAttribute('aria-pressed',String(!excel));
+  $('modeExcel').setAttribute('aria-pressed',String(excel));
 }
 function refreshMachineOptions(s) {
   const select=$('outageMachine'), prev=select.value;
@@ -78,6 +90,7 @@ function readScenario() {
 async function loadScenario(name) {
   if(name.startsWith('industry:')){await loadUniversal(name.slice(9));return;}
   currentUniversalScenario = null;currentTimeUnit = 'hour';$('studioEditor').hidden=true;
+  setInputMode('demo');
   const isPublic=name.startsWith('public:');
   const res=await fetch(isPublic?('/api/public-benchmarks/'+encodeURIComponent(name.slice(7))):('/api/scenarios/'+encodeURIComponent(name)));
   $('objectiveSelect').value=isPublic?'makespan':'weighted_tardiness';if(!res.ok)throw Error('Could not load scenario');
@@ -123,7 +136,7 @@ function renderResult() {
       `${o.setup_time_units} ${currentTimeUnit} setup units vs. ${b.setup_time_units} baseline`,
       o.changeover_count < b.changeover_count));
   }
-  $('runState').textContent=sol.status.replaceAll('_',' ');
+  $('runState').textContent=sol.optimality_proven ? 'Optimal solution proven' : 'Feasible plan ready';
   const m=$('experimentMeta');m.replaceChildren(meta('Solver',sol.solver),meta('Solver status',sol.status),
     meta('Objective',lastResult.target_metric || 'weighted_tardiness'),
     meta('Variables',sol.model_variables),meta('Linear constraints',sol.model_constraints),
@@ -202,9 +215,11 @@ async function run(){
     const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time,engine:$('objectiveSelect').value==='makespan'?'milp_highs':$('engineSelect').value,baseline_policy:$('baselinePolicy').value,objective:$('objectiveSelect').value})});
     const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Server error');
     if(currentUniversalScenario){currentUniversalScenario=scenario;currentScenario=data.normalized_scenario;currentTimeUnit=scenario.time_unit;displayStats(currentScenario);populateStudioEditor();}
-    lastResult=data;setTab('optimized');renderResult();await refreshHistory();setStatus('Completed and validated. '+(data.persisted?'Saved to your local experiment history. ': 'Public demo, export results to keep them. ')+data.note);
+    lastResult=data;setTab('optimized');renderResult();await refreshHistory();
+    setStatus('Plan ready and validated. '+(data.persisted?'Saved locally. ':'Public demo: download your result to keep it. ')+data.note);
+    $('results').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
   }catch(err){$('runState').textContent='Error';setStatus('Cannot run: '+err.message,true)}
-  finally{btn.disabled=false;btn.innerHTML='<span class="run-icon">▶</span> Run optimization'}
+  finally{btn.disabled=false;btn.innerHTML='<span class="run-icon">▶</span> Generate plan'}
 }
 
 async function rollingReplan() {
@@ -272,7 +287,8 @@ function acceptImportedEnterprise(data, format) {
   displayStats(currentScenario);populateStudioEditor();
   $('kpis').replaceChildren(e('div',format+' data validated. Click Run optimization to generate a schedule.','empty-kpi'));
   $('timeline').replaceChildren(e('div','Imported '+data.scenario.industry+' data. Ready to optimize.','empty-state'));
-  enterpriseFeedback('Validated '+data.profile.work_orders+' work orders and '+data.profile.steps+' steps. Click Run optimization.');
+  setInputMode('excel');
+  enterpriseFeedback('Ready: '+data.profile.work_orders+' work orders and '+data.profile.steps+' operations validated. Now select Generate plan.');
 }
 async function importEnterpriseWorkbook() {
   const file=$('enterpriseWorkbook').files[0];
@@ -429,6 +445,8 @@ async function boot(){
         $('limitInput').value = String(Math.min(4, maxSolverSeconds));
     }
   } catch (error) { /* Local fallback retains documented 60-second cap. */ }
+  $('modeDemo').addEventListener('click',()=>setInputMode('demo'));
+  $('modeExcel').addEventListener('click',()=>setInputMode('excel'));
   $('applyOutage').addEventListener('click',applyOutage);
   $('applyShift').addEventListener('click',applyShift);
   $('rescheduleButton').addEventListener('click',rollingReplan);
