@@ -4,6 +4,12 @@
 
 **Buyer/decision maker:** production planning lead or manufacturing engineering manager. **Operator:** scheduler/production planner. **Measured value:** weighted order lateness, late orders, makespan, modeled changeovers and schedule stability, measured against the strongest eligible manual heuristic. **Not** an AI chat assistant, a generic ERP, or a broad industrial platform.
 
+## Verified gap and next focused gate (v0.10)
+
+We replaced a single-machine success story with a **70-instance, four-complexity-family experiment**. Across 807 synthetic operations, a validated MILP-or-classical fallback policy reduced aggregate weighted tardiness **16.72%** (60/70 proven optima); in 10 congested workshops the gain was only **1.25%** and **0/10** could prove optimal within 0.7 seconds. Full details: [engineering evidence](ENGINEERING_EVIDENCE_V1.md).
+
+**Next priority: difficult-instance optimization quality**, not new industries or broad software features. Use the same fixed-seed congested instances under 0.7s, 2s, and 5s limits; compare raw candidate quality, fallback rate, relative MIP gap, proof rate, model-size limits, and full wall-clock runtime. Only then evaluate tighter mathematical formulations or CP-SAT. A larger number of favorable synthetic examples alone does not raise maturity score.
+
 ## Hard boundaries (protect deep specialization)
 
 - Domain: job-shop and flexible job-shop scheduling on machining/fabrication cells, under finite machine and qualified-worker capacity.
