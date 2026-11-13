@@ -1,0 +1,100 @@
+name: OPTERA Public Demo Smoke
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-demo:
+    name: Public Render API, Excel and scheduling smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 9
+    steps:
+      - name: Check deployed API and safe public-demo behavior
+        env:
+          OPTERA_DEMO_URL: https://optera-ojwh.onrender.com
+        run: |
+          python - <<'PYCODE'
+          import json
+          import os
+          import time
+          import urllib.error
+          import urllib.request
+
+          base=os.environ["OPTERA_DEMO_URL"].rstrip("/")
+
+          def fetch(path, payload=None):
+              headers={"Accept":"application/json"}
+              data=None
+              if payload is not None:
+                  headers["Content-Type"]="application/json"
+                  data=json.dumps(payload).encode("utf-8")
+              request=urllib.request.Request(base+path,data=data,headers=headers)
+              try:
+                  with urllib.request.urlopen(request,timeout=30) as response:
+                      return response.status,response.headers, response.read()
+              except urllib.error.HTTPError as exc:
+                  return exc.code,exc.headers,exc.read()
+
+          # The first request can wake a suspended free-tier instance; retry transient failures.
+          for i in range(28):
+              try:
+                  status,headers,body=fetch("/api/health")
+                  if status==200 and json.loads(body).get("application")=="OPTERA":
+                      break
+              except (urllib.error.URLError,TimeoutError,ValueError) as exc:
+                  print("Attempt", i+1, str(exc)[:160])
+              time.sleep(8)
+          else:
+              raise AssertionError("Public API did not become healthy")
+
+          print("Health",body.decode())
+          status,_,body=fetch("/api/config")
+          assert status==200, status
+          config=json.loads(body)
+          assert config["public_demo"] is True, config
+          assert config["max_solver_seconds"]==5, config
+
+          status,headers,body=fetch("/api/enterprise/template-xlsx")
+          assert status==200 and body[:2]==b"PK", (status,body[:120])
+          assert len(body)>1000, "Excel template unexpectedly empty"
+          print("Excel template:",len(body),"bytes")
+
+          status,_,body=fetch("/api/history")
+          assert status==404, (status,body[:120])
+          print("Public history disabled")
+
+          scenario={
+            "schema_version":1,
+            "factory_name":"Optera live demo quality gate — synthetic",
+            "machines":[{"id":"CNC","downtime":[],
+                         "working_windows":[{"start":8,"end":12},{"start":16,"end":21}]}],
+            "jobs":[
+              {"id":"A","release":0,"due":12,"weight":2,
+               "operations":[{"id":"mill","duration":2,"machines":["CNC"]}]},
+              {"id":"B","release":0,"due":18,"weight":1,
+               "operations":[{"id":"mill","duration":2,"machines":["CNC"]}]}
+            ]
+          }
+          status,_,body=fetch("/api/run",{"scenario":scenario,"time_limit":1,"engine":"milp_highs"})
+          assert status==200, (status,body[:400])
+          result=json.loads(body)
+          assert result.get("persisted") is False
+          before=result["baseline"]["metrics"]["weighted_tardiness"]
+          after=result["optimized"]["metrics"]["weighted_tardiness"]
+          assert after<=before,(before,after)
+          for row in result["optimized"]["schedule"]:
+              assert any(start<=row["start"] and row["end"]<=end for start,end in [(8,12),(16,21)]),row
+          print("Live scheduling success:",before,"->",after)
+
+          invalid=json.loads(json.dumps(scenario))
+          invalid["jobs"][0]["operations"][0]["duration"]=8
+          status,_,body=fetch("/api/run",{"scenario":invalid,"time_limit":1})
+          assert status==422, (status,body[:400])
+          print("Impossible shift rejected:",status)
+          print("All public demo checks passed")
+          PYCODE
