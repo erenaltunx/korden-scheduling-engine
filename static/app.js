@@ -140,6 +140,7 @@ function readScenario() {
   return parsed;
 }
 async function loadScenario(name) {
+  clearPlanningHelp();
   if(name.startsWith('industry:')){await loadUniversal(name.slice(9));return;}
   loadedInputKind=null;inputRevision++;
   currentUniversalScenario = null;currentTimeUnit = 'hour';$('studioEditor').hidden=true;
@@ -292,10 +293,6 @@ async function run(){
       error.diagnostic=data.diagnostic;
       throw error;
     }
-    if(runRevision!==inputRevision) {
-      setStatus('Inputs changed while generating the plan. Previous result discarded; generate again.');
-      return;
-    }
     if(currentUniversalScenario){currentUniversalScenario=scenario;currentScenario=data.normalized_scenario;currentTimeUnit=scenario.time_unit;displayStats(currentScenario);populateStudioEditor();}
     lastResult=data;setTab('optimized');renderResult();await refreshHistory();
     setStatus('Plan ready and validated. '+(data.persisted?'Saved locally. ':'Public demo: download your result to keep it. ')+data.note);
@@ -366,6 +363,7 @@ function enterpriseFeedback(message, isError=false) {
   setStatus(message,isError);
 }
 function acceptImportedEnterprise(data, format) {
+  clearPlanningHelp();
   currentUniversalScenario=data.scenario;currentScenario=data.normalized_scenario;currentTimeUnit=data.scenario.time_unit;
   $('jsonEditor').value=JSON.stringify(data.scenario,null,2);lastResult=null;
   $('downloadButton').disabled=true;$('exportBiButton').disabled=true;$('rescheduleButton').disabled=true;
@@ -474,6 +472,7 @@ function updateStudioResourceInputs() {
   $('studioChangeoverTime').value=String(machine?.changeover_time||0);
 }
 async function loadUniversal(id) {
+  clearPlanningHelp();
   loadedInputKind=null;inputRevision++;
   setInputMode('demo');syncRunAvailability();
   const response=await fetch('/api/universal/templates/'+encodeURIComponent(id));
