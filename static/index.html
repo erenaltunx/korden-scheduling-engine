@@ -3,138 +3,228 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Optera — Finite-capacity production scheduling, workforce assignment and disruption recovery." />
-  <title>Optera | Production Scheduling & Recovery</title>
+  <meta name="description" content="Optera — turn manufacturing work orders into a validated, easy-to-read production schedule." />
+  <title>Optera | Production Planner</title>
   <link rel="stylesheet" href="/static/styles.css" />
+  <link rel="stylesheet" href="/static/planner.css" />
   <script src="/static/app.js" defer></script>
 </head>
 <body>
-<div class="app-layout">
-  <aside class="sidebar">
-    <div class="brand"><span class="brand-symbol">O</span><div><div class="brand-title">OPTERA<span class="brand-dot">.</span></div><div class="brand-sub">PRODUCTION SCHEDULING</div></div></div>
-    <div class="sidebar-intro">Scenario control <span class="version">v0.14</span></div>
-    <div class="control-group">
-      <label for="scenarioSelect">Choose a workflow</label>
-      <select id="scenarioSelect"><option>Loading…</option></select>
-      <p class="help">Start with the CNC setup demonstration. Other workflows remain available for regression testing.</p>
+<div class="app-layout planner-layout">
+  <header class="planner-header">
+    <a class="brand" href="/" aria-label="Optera home">
+      <span class="brand-symbol">O</span>
+      <span><span class="brand-title">OPTERA<span class="brand-dot">.</span></span><span class="brand-sub">PRODUCTION PLANNER</span></span>
+    </a>
+    <div class="planner-header-right">
+      <span class="demo-label"><span class="tag-dot"></span> Demo workspace</span>
+      <a class="top-link" href="/docs" target="_blank" rel="noopener noreferrer">API docs</a>
     </div>
-    <div class="control-group">
-      <label for="limitInput">Solver time limit <span class="subdued">seconds</span></label>
-      <input id="limitInput" type="number" min="0.5" max="60" step="0.5" value="8" />
-      <p class="help">HiGHS searches for the best feasible schedule and may prove optimality.</p>
-    </div>
-    <div class="control-group">
-      <label for="engineSelect">Scheduling approach</label>
-      <select id="engineSelect"><option value="hybrid_search_highs">Hybrid: Local Search + MILP</option><option value="milp_highs">MILP / HiGHS only</option></select>
-      <p class="help">Hybrid mode adds a fast feasible job-order search; only an MILP proof certifies optimality. Makespan uses MILP only.</p>
-    </div>
-    <div class="control-group">
-      <label for="objectiveSelect">Optimization target</label>
-      <select id="objectiveSelect"><option value="weighted_tardiness">Weighted order tardiness</option><option value="makespan">Total production completion (makespan)</option></select>
-      <p class="help">Public JSPLib benchmarks use makespan, not tardiness. Never compare different objectives.</p>
-    </div>
-    <div class="control-group">
-      <label for="baselinePolicy">Benchmark baseline</label>
-      <select id="baselinePolicy"><option value="edd">Earliest Due Date (EDD)</option><option value="fifo">FIFO</option><option value="spt">Shortest Processing Time</option><option value="wspt">Weighted SPT</option></select>
-      <p class="help">Choose a transparent classical dispatching policy.</p>
-    </div>
-    <div class="control-group">
-      <label for="outageMachine">What-if: resource unavailable</label>
-      <select id="outageMachine"><option value="">Select resource</option></select>
-      <div class="outage-time-row">
-        <label>From (h)<input id="outageStart" type="number" min="0" max="10000" step="1" value="8" /></label>
-        <label>Until (h)<input id="outageEnd" type="number" min="1" max="10000" step="1" value="14" /></label>
-      </div>
-      <button class="secondary-button" type="button" id="applyOutage">Apply outage to editable scenario</button>
-      <p class="help">Legacy factory-mode counterfactual. Use the sector studio below for universal workflows.</p>
-      <label for="shiftStart">Machine permitted working period</label>
-      <div class="outage-time-row">
-        <label>From (h)<input id="shiftStart" type="number" min="0" max="9999" step="1" value="8" /></label>
-        <label>Until (h)<input id="shiftEnd" type="number" min="1" max="10000" step="1" value="16" /></label>
-      </div>
-      <button class="secondary-button" id="applyShift" type="button">Add working period</button>
-      <p class="help">Machine is closed outside explicitly listed hours. Repeat for additional periods; these are absolute hours, not recurring daily shifts.</p>
-      <label for="rescheduleNow">Rolling replan — current planning time</label>
-      <input id="rescheduleNow" type="number" min="0" max="10000" step="1" value="2" />
-      <button class="secondary-button" type="button" id="rescheduleButton" disabled>Replan remaining work (freeze started tasks)</button>
-      <p class="help">For legacy manufacturing examples: run a plan, then freeze started tasks and replan.</p>
-    </div>
-    <section class="scenario-stats" id="scenarioStats"><div class="mini-loading">Loading sample…</div></section>
-    <button class="run-button" id="runButton" type="button"><span class="run-icon">▶</span> Run optimization</button>
-    <button class="secondary-button" id="toggleEditor" type="button">Edit scenario JSON <span>⌄</span></button>
-    <div id="editorPanel" class="editor-panel" hidden><label for="jsonEditor">Scenario definition</label><textarea id="jsonEditor" spellcheck="false"></textarea><div class="editor-hint">Valid JSON · integer hours · sector workflows or legacy machines, jobs, operations</div></div>
-    <div class="sidebar-footnote">Local-first optimization. No credentials, LLM API keys or cloud services required.</div>
-  </aside>
-
-  <main class="main">
-    <header class="topbar"><div class="path"><span>Workbench</span><span class="slash">/</span><strong>Resource Scheduling</strong></div><div class="tag"><span class="tag-dot"></span> LOCAL ENGINE</div></header>
-    <div class="content">
-      <div class="hero"><div class="hero-eyebrow">FINITE-CAPACITY PLANNING</div><h1>From production orders<br />to <span>a feasible shop-floor plan.</span></h1><p>Schedule high-mix production with machine capacity, qualified operators, changeovers and machine outages. Compare a transparent baseline with a mathematically checked plan.</p></div>
-      <section class="industry-studio" aria-labelledby="studioTitle">
-        <div class="studio-heading"><div><div class="hero-eyebrow">CONFIGURABLE WORKLOAD STUDIO</div><h2 id="studioTitle">Focus on the production cell.</h2><p>Start with the high-mix CNC setup demonstration. Other resource workflows remain available as compatibility examples.</p></div><span class="version">UNIVERSAL SCHEMA v1</span></div>
-        <div class="studio-grid">
-          <label>Industry template<select id="industrySelect"><option value="">Loading sectors…</option></select></label>
-          <button class="secondary-button" id="loadIndustryButton" type="button">Load sector workflow</button>
-          <div class="studio-detail" id="industrySummary">Select an industry to see how capability-based resource scheduling works.</div>
+  </header>
+  <main class="main planner-main" id="main">
+    <div class="content planner-content">
+      <div class="hero planner-hero">
+        <div class="hero-eyebrow">SMARTER PRODUCTION PLANNING</div>
+        <h1>A better production plan.<br /><span>In three simple steps.</span></h1>
+        <p>Give Optera your work orders and machines. It finds a feasible schedule, then shows how it compares with a traditional plan.</p>
+        <div class="workflow-strip" aria-label="Three steps">
+          <span><strong>01</strong> Choose your data</span>
+          <span class="strip-arrow" aria-hidden="true">→</span>
+          <span><strong>02</strong> Generate a plan</span>
+          <span class="strip-arrow" aria-hidden="true">→</span>
+          <span><strong>03</strong> Review the schedule</span>
         </div>
-        <div id="studioEditor" class="studio-editor" hidden>
-          <div class="studio-edit-grid">
-            <label>Work order<select id="studioOrder"></select></label>
-            <label>Due time <input type="number" min="0" max="10000" step="1" id="studioDue" /></label>
-            <label>Priority (1–100)<input type="number" min="1" max="100" step="1" id="studioPriority" /></label>
-            <button class="secondary-button" type="button" id="studioApplyOrder">Update work order</button>
+      </div>
+
+      <section class="planner-card" id="step-input" aria-labelledby="inputHeading">
+        <div class="step-heading">
+          <span class="step-number" aria-hidden="true">01</span>
+          <div><h2 id="inputHeading">Start with production data</h2>
+          <p>Try a ready-made example or upload your own manufacturing spreadsheet.</p></div>
+        </div>
+        <div class="mode-switch" role="group" aria-label="Choose your data source">
+          <button id="modeDemo" type="button" class="mode-option active" aria-pressed="true">
+            <span class="mode-icon" aria-hidden="true">▦</span>
+            <span><strong>Try an example</strong><small>No files needed</small></span>
+          </button>
+          <button id="modeExcel" type="button" class="mode-option" aria-pressed="false">
+            <span class="mode-icon" aria-hidden="true">▤</span>
+            <span><strong>Upload an Excel file</strong><small>Use your own work orders</small></span>
+          </button>
+        </div>
+        <div id="demoPanel" class="input-panel">
+          <div class="field-wrap">
+            <label for="scenarioSelect">Production example</label>
+            <select id="scenarioSelect"><option>Loading examples…</option></select>
+            <p class="field-tip">Start with the CNC setup example. A machine-work calendar example is also included.</p>
           </div>
-          <div class="studio-edit-grid">
-            <label>Resource<select id="studioResource"></select></label>
-            <label>Unavailable from<input type="number" min="0" max="10000" step="1" id="studioDownStart" value="20" /></label>
-            <label>Unavailable until<input type="number" min="1" max="10000" step="1" id="studioDownEnd" value="25" /></label>
-            <button class="secondary-button" type="button" id="studioApplyDown">Add availability block</button>
+          <div class="scenario-overview">
+            <span class="eyebrow">WHAT'S IN THIS EXAMPLE?</span>
+            <div class="scenario-stats" id="scenarioStats"><span class="mini-loading">Loading scenario…</span></div>
           </div>
-          <div class="studio-edit-grid">
-            <label>Operation<select id="studioStep"></select></label>
-            <label>Product family<input id="studioSetupFamily" maxlength="40" placeholder="e.g. TOOL_A" /></label>
-            <label>Selected machine: switch time (0–120)<input id="studioChangeoverTime" type="number" min="0" max="120" step="1" value="0" /></label>
-            <button class="secondary-button" type="button" id="studioApplySetup">Update setup constraints</button>
+        </div>
+        <div id="excelPanel" class="input-panel" hidden>
+          <div class="excel-help">
+            <div><strong>Need a starting file?</strong><p>Download the template, replace the sample machines and orders, then upload it here.</p></div>
+            <a href="/api/enterprise/template-xlsx" class="template-link" download="optera-manufacturing-example.xlsx">Download Excel template ↓</a>
           </div>
-          <p class="studio-help">Machine setup time applies only when the product family changes. All orders eligible for a changeover-enabled machine must declare a family. Set product families before enabling a new machine setup rule.</p>
-          <p class="studio-help">All edits are validated. Each operation chooses one qualified primary resource and may reserve fixed simultaneous support resources (for example, a machine plus its operator). Select a qualified operator from an eligible skills pool; multi-role teams, travel times and material inventory remain unsupported and are rejected.</p>
+          <div class="excel-grid">
+            <label class="file-drop">Select Excel workbook (.xlsx)
+              <input id="enterpriseWorkbook" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
+              <small>One file, up to 320 KiB. Your upload is validated before optimization.</small>
+            </label>
+            <label>Planning name<input type="text" id="enterpriseName" value="My production cell" maxlength="100" /></label>
+            <label>Time unit<select id="enterpriseUnit"><option value="hour">Hours</option><option value="minute">Minutes</option></select></label>
+          </div>
+          <div class="excel-actions">
+            <button class="secondary-button" id="enterpriseWorkbookImport" type="button">Validate &amp; load Excel</button>
+            <p class="studio-help" id="enterpriseFeedback" role="status" aria-live="polite">No file loaded yet.</p>
+          </div>
+          <details class="nested-details">
+            <summary>Other import options (CSV and metadata)</summary>
+            <div class="details-content">
+              <label>Industry label<input type="text" id="enterpriseIndustry" value="Manufacturing" maxlength="100" /></label>
+              <label>CSV files (resources, orders, steps, optional unavailability)
+                <input id="enterpriseFiles" type="file" accept=".csv,text/csv" multiple />
+              </label>
+              <button class="secondary-button" id="enterpriseImport" type="button">Validate &amp; load CSV files</button>
+            </div>
+          </details>
         </div>
       </section>
-      <section class="industry-studio" aria-labelledby="enterpriseTitle">
-        <div class="studio-heading"><div><div class="hero-eyebrow">ENTERPRISE DATA BRIDGE</div>
-        <h2 id="enterpriseTitle">Plan from your own tables.</h2>
-        <p>Load your production-cell data from one Excel workbook. Your data is validated before scheduling; no ERP connection or credentials required.</p>
-        </div><span class="version">EXCEL / CSV / MILP</span></div>
-        <p class="studio-help">1. Download the editable manufacturing example. 2. Fill in your machines, work orders and operations. 3. Upload the Excel workbook and review errors. 4. Run optimization.</p>
-        <p><a href="/api/enterprise/template-xlsx" class="secondary-button" download="optera-manufacturing-example.xlsx">Download manufacturing Excel example (.xlsx)</a></p>
-        <div class="studio-edit-grid">
-          <label>Workflow name<input type="text" id="enterpriseName" value="My production cell" maxlength="100" /></label>
-          <label>Industry<input type="text" id="enterpriseIndustry" value="Manufacturing" maxlength="100" /></label>
-          <label>Time unit<select id="enterpriseUnit"><option value="hour">Hours</option><option value="minute">Minutes</option></select></label>
-          <label>Excel workbook (.xlsx)<input id="enterpriseWorkbook" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" /></label>
+
+      <section class="planner-card step-run" id="step-run" aria-labelledby="runHeading">
+        <div class="step-heading">
+          <span class="step-number" aria-hidden="true">02</span>
+          <div><h2 id="runHeading">Generate your production plan</h2>
+          <p>Optera checks machine capacity, operation order, maintenance, and any specified working periods.</p></div>
         </div>
-        <button class="secondary-button" id="enterpriseWorkbookImport" type="button">Validate and load Excel workbook</button>
-        <p class="studio-help" id="enterpriseFeedback" role="status" aria-live="polite">No file loaded. Example workbook includes the required resources, orders and steps sheets.</p>
-        <details class="studio-help"><summary>Advanced: upload separate CSV tables instead</summary>
-          <label>CSV files (3 or 4)<input id="enterpriseFiles" type="file" accept=".csv,text/csv" multiple /></label>
-          <button class="secondary-button" id="enterpriseImport" type="button">Validate and load CSV tables</button>
-          <p>Expected files: <code>resources.csv</code>, <code>orders.csv</code>, <code>steps.csv</code>, optional <code>unavailability.csv</code>.</p>
+        <div class="run-row">
+          <button class="run-button" id="runButton" type="button"><span class="run-icon">▶</span> Generate plan</button>
+          <span class="run-state" id="runState">Ready</span>
+        </div>
+        <div class="status-line" id="statusLine" role="status" aria-live="polite">Select an example or load your Excel file to begin.</div>
+
+        <details class="advanced-details" id="advancedOptions">
+          <summary>Advanced settings &amp; what-if scenarios <span class="optional-tag">Optional</span></summary>
+          <div class="details-content">
+            <div class="advanced-grid">
+              <label for="limitInput">Solver budget (seconds)
+                <input id="limitInput" type="number" min="0.5" max="60" step="0.5" value="4" />
+              </label>
+              <label for="engineSelect">Planning method
+                <select id="engineSelect">
+                  <option value="hybrid_search_highs">Hybrid (recommended)</option>
+                  <option value="milp_highs">MILP / HiGHS only</option>
+                </select>
+              </label>
+              <label for="objectiveSelect">What to improve
+                <select id="objectiveSelect">
+                  <option value="weighted_tardiness">Priority-weighted lateness</option>
+                  <option value="makespan">Overall completion time</option>
+                </select>
+              </label>
+              <label for="baselinePolicy">Traditional comparison
+                <select id="baselinePolicy">
+                  <option value="edd">Earliest due date</option>
+                  <option value="fifo">First in, first out</option>
+                  <option value="spt">Shortest job first</option>
+                  <option value="wspt">Weighted shortest job first</option>
+                </select>
+              </label>
+            </div>
+            <p class="field-tip">These settings are optional. A feasible plan is not automatically a mathematically proven optimum.</p>
+            <details class="nested-details">
+              <summary>Machine availability, shift hours and disruptions</summary>
+              <div class="details-content">
+                <div class="advanced-grid">
+                  <label for="outageMachine">Machine / resource
+                    <select id="outageMachine"><option value="">Choose machine…</option></select>
+                  </label>
+                  <label for="outageStart">Outage from (h)<input id="outageStart" type="number" min="0" max="10000" step="1" value="8" /></label>
+                  <label for="outageEnd">Outage until (h)<input id="outageEnd" type="number" min="1" max="10000" step="1" value="14" /></label>
+                  <button class="secondary-button" id="applyOutage" type="button">Apply outage</button>
+                  <label for="shiftStart">Work period from (h)<input id="shiftStart" type="number" min="0" max="9999" step="1" value="8" /></label>
+                  <label for="shiftEnd">Work period until (h)<input id="shiftEnd" type="number" min="1" max="10000" step="1" value="16" /></label>
+                  <button class="secondary-button" id="applyShift" type="button">Add working period</button>
+                  <label for="rescheduleNow">Replan at hour<input id="rescheduleNow" type="number" min="0" max="10000" step="1" value="2" /></label>
+                  <button class="secondary-button" id="rescheduleButton" type="button" disabled>Replan remaining work</button>
+                </div>
+                <p class="field-tip">Working periods are explicit absolute time intervals, not automatically recurring shifts. Replanning keeps already started work fixed.</p>
+              </div>
+            </details>
+            <details class="nested-details">
+              <summary>Production order editor &amp; technical scenario JSON</summary>
+              <div class="details-content">
+                <div class="studio-grid">
+                  <label>Alternate workflow example<select id="industrySelect"><option value="">Loading…</option></select></label>
+                  <button class="secondary-button" id="loadIndustryButton" type="button">Load alternate template</button>
+                  <div class="studio-detail" id="industrySummary">Editable operation priorities, resources and availability.</div>
+                </div>
+                <div id="studioEditor" class="studio-editor" hidden>
+                  <div class="studio-edit-grid">
+                    <label>Work order<select id="studioOrder"></select></label>
+                    <label>Due time<input type="number" min="0" max="10000" step="1" id="studioDue" /></label>
+                    <label>Priority (1–100)<input type="number" min="1" max="100" step="1" id="studioPriority" /></label>
+                    <button class="secondary-button" id="studioApplyOrder" type="button">Update order</button>
+                  </div>
+                  <div class="studio-edit-grid">
+                    <label>Resource<select id="studioResource"></select></label>
+                    <label>Unavailable from<input type="number" min="0" max="10000" step="1" id="studioDownStart" value="20" /></label>
+                    <label>Until<input type="number" min="1" max="10000" step="1" id="studioDownEnd" value="25" /></label>
+                    <button class="secondary-button" id="studioApplyDown" type="button">Block resource</button>
+                  </div>
+                  <div class="studio-edit-grid">
+                    <label>Operation<select id="studioStep"></select></label>
+                    <label>Product family<input id="studioSetupFamily" maxlength="40" placeholder="Family A" /></label>
+                    <label>Setup time<input id="studioChangeoverTime" type="number" min="0" max="120" step="1" value="0" /></label>
+                    <button class="secondary-button" id="studioApplySetup" type="button">Update setup</button>
+                  </div>
+                </div>
+                <button class="secondary-button" id="toggleEditor" type="button">Show / hide scenario JSON</button>
+                <div id="editorPanel" class="editor-panel" hidden>
+                  <label for="jsonEditor">Scenario definition (advanced)</label>
+                  <textarea id="jsonEditor" spellcheck="false"></textarea>
+                  <p class="field-tip">Only edit if you know the scenario schema. Invalid constraints are rejected.</p>
+                </div>
+              </div>
+            </details>
+          </div>
         </details>
       </section>
-      <div class="section-title"><div><h2>Performance benchmark</h2><p>Classical dispatching baseline vs. mixed-integer linear programming</p></div><div class="run-state" id="runState">Ready to run</div></div>
-      <div class="kpis" id="kpis"><div class="empty-kpi">Run a scenario to generate your first measured benchmark.</div></div>
-      <div class="status-line" id="statusLine" role="status" aria-live="polite">Waiting for your first run.</div>
 
-      <div class="workspace-panel">
-        <div class="workspace-head"><div><h2>Resource allocation timeline</h2><p>Resource allocation, workflow precedence and unavailability</p></div><div class="tab-group"><button class="tab active" id="tabOptimized" type="button">Optimized</button><button class="tab" id="tabBaseline" type="button">Selected baseline</button></div></div>
-        <div id="timeline" class="timeline"><div class="empty-state"><span class="empty-icon">▤</span><h3>No schedule yet</h3><p>Run the model to compare feasible plans across resources and work orders.</p></div></div>
-        <div id="chartLegend" class="legend"></div>
-      </div>
-      <div class="bottom-panels">
-        <section class="workspace-panel compact"><h2>Experiment metadata</h2><div id="experimentMeta" class="experiment-list"><div class="placeholder">No experiment executed.</div></div><div id="historyPanel"><h2 class="history-heading">Saved experiment history</h2><div id="savedHistory" class="experiment-list"><div class="placeholder">Loading saved experiments…</div></div></div></section>
-        <section class="workspace-panel compact"><h2>Research integrity</h2><div class="research-note">Measured improvements apply <strong>only to the selected scenario and baseline</strong>. A solver's optimal result refers to the mathematical model, not to real-world savings. Results must be validated before CV use.</div><button id="downloadButton" class="download-button" disabled>Export full experiment JSON ↓</button><button id="exportBiButton" class="download-button" disabled>Export Power BI-ready CSV tables ↓</button></section>
-      </div>
-      <footer>OPTERA / v0.14 · Finite-Capacity Production Scheduling &amp; Recovery · Independent engineering project</footer>
+      <section class="planner-card result-card" id="results" aria-labelledby="resultsHeading">
+        <div class="step-heading">
+          <span class="step-number" aria-hidden="true">03</span>
+          <div><h2 id="resultsHeading">Understand your schedule</h2>
+          <p>See the production timeline and a fair comparison with a traditional plan.</p></div>
+        </div>
+        <div class="kpis" id="kpis"><div class="empty-kpi">Your results will appear here after generating a plan.</div></div>
+        <div class="timeline-head">
+          <div><h3>Machine schedule</h3><p>Every colored bar is an operation. Shaded areas show unavailable time.</p></div>
+          <div class="tab-group">
+            <button class="tab active" id="tabOptimized" type="button">Optera plan</button>
+            <button class="tab" id="tabBaseline" type="button">Traditional plan</button>
+          </div>
+        </div>
+        <div class="timeline" id="timeline">
+          <div class="empty-state"><h3>No plan yet</h3><p>Use the button above to build your first production schedule.</p></div>
+        </div>
+        <div class="legend" id="chartLegend"></div>
+        <div class="export-row">
+          <button class="download-button" id="downloadButton" type="button" disabled>Download plan (JSON) ↓</button>
+          <button class="download-button" id="exportBiButton" type="button" disabled>Download Excel / Power BI data ↓</button>
+        </div>
+        <details class="advanced-details research-details">
+          <summary>Technical solver details &amp; experiment history</summary>
+          <div class="details-content">
+            <div class="experiment-list" id="experimentMeta"><div class="placeholder">No experiment run yet.</div></div>
+            <div id="historyPanel"><h3>Previous local experiments</h3><div class="experiment-list" id="savedHistory"><div class="placeholder">No saved experiments.</div></div></div>
+            <p class="research-note">All improvements are relative to the selected traditional method on the supplied scenario. Synthetic test results do not mean proven factory savings. Solver optimality is only a mathematical-model claim.</p>
+          </div>
+        </details>
+      </section>
+      <footer>OPTERA · Finite-capacity scheduling prototype · Synthetic examples are not real factory results · No private datasets on this public demo.</footer>
     </div>
   </main>
 </div>

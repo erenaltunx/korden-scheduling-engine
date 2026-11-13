@@ -1,0 +1,177 @@
+/* OPTERA planner experience — progressive disclosure over the tested engine UI.
+   No JS dependency: all expert functionality remains in semantic <details>. */
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#172c36;background:#f5f8fa}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:#f5f8fa;color:#172c36}
+.planner-layout{display:flex;flex-direction:column;min-height:100vh}
+.planner-header{min-height:80px;display:flex;align-items:center;justify-content:space-between;gap:20px;padding:16px max(26px,calc((100vw - 1100px)/2));background:#fff;border-bottom:1px solid #e3ebed}
+.planner-header .brand{display:flex;align-items:center;text-decoration:none;gap:11px}
+.planner-header .brand-symbol{background:#0f7b72;box-shadow:0 4px 11px #0f7b721f;transform:none;color:#fff;width:42px;height:42px;border-radius:13px}
+.planner-header .brand-title{font-size:23px;display:block;font-weight:850;line-height:1.1;color:#172c36;letter-spacing:1.5px}
+.planner-header .brand-dot{color:#119184}
+.planner-header .brand-sub{display:block;color:#7d9098;font-size:9px;font-weight:800;letter-spacing:1.35px;margin-top:5px}
+.planner-header-right{display:flex;align-items:center;gap:20px}
+.demo-label{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#437469;background:#ecf7f2;border:1px solid #d4eade;border-radius:100px;padding:9px 12px}
+.demo-label .tag-dot{position:static;display:inline-block;box-shadow:none;background:#13a37e}
+.top-link{text-decoration:none;color:#405d66;font-size:12px;font-weight:750}
+.top-link:hover{text-decoration:underline}
+.planner-main{width:100%;flex:1;min-width:0}
+.planner-content{padding:34px 24px 56px;max-width:1100px;margin:0 auto}
+.planner-hero{padding:22px 0 32px}
+.planner-hero .hero-eyebrow{color:#178578;letter-spacing:2.2px;font-size:10px;font-weight:850;margin-bottom:14px}
+.planner-hero h1{font-size:clamp(32px,4.6vw,48px);letter-spacing:-1.55px;color:#122832;margin:0 0 17px;line-height:1.11;font-weight:850}
+.planner-hero h1 span{color:#0d8277}
+.planner-hero p{color:#566e77;font-size:14px;max-width:640px;line-height:1.75;margin:0}
+.workflow-strip{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-top:25px;color:#547078;font-weight:650;font-size:12px}
+.workflow-strip span:not(.strip-arrow){display:flex;align-items:center;gap:8px}
+.workflow-strip strong{font-size:10px;display:grid;place-items:center;width:29px;height:29px;background:#e1f2ee;border:1px solid #cee9e4;color:#107c71;border-radius:50%}
+.workflow-strip .strip-arrow{color:#a8b9bd}
+.planner-card{background:#fff;border:1px solid #dfe8eb;border-radius:18px;box-shadow:0 8px 28px rgba(22,47,61,.035);padding:29px 32px;margin:0 0 21px}
+.step-heading{display:flex;gap:15px;align-items:flex-start;margin-bottom:23px}
+.step-number{flex:0 0 36px;display:grid;place-items:center;height:36px;border-radius:11px;background:#ddf2ed;color:#0d8277;font-weight:900;font-size:14px}
+.step-heading h2{margin:2px 0 6px;font-size:21px;letter-spacing:-.5px;color:#172e39;line-height:1.2}
+.step-heading p{margin:0;color:#758990;font-size:13px;line-height:1.6}
+.mode-switch{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-bottom:20px}
+.mode-option{background:#fff;display:flex;text-align:left;gap:13px;align-items:center;padding:17px 19px;border:1.5px solid #dbe5e8;border-radius:13px;color:#1d3741;transition:border-color .16s,box-shadow .16s,background .16s;min-height:78px}
+.mode-option:hover{border-color:#71aba3}
+.mode-option.active{border-color:#159587;background:#eff9f6;box-shadow:0 0 0 2px #138b7b13}
+.mode-option:focus-visible,.run-button:focus-visible,.secondary-button:focus-visible,select:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid #23a28b66;outline-offset:2px}
+.mode-icon{font-size:24px;display:grid;place-items:center;background:#e8f3f1;width:42px;height:42px;border-radius:11px;color:#188579}
+.mode-option strong{display:block;font-size:14px;margin-bottom:4px;font-weight:800}
+.mode-option small{font-size:11px;color:#69818a}
+.input-panel{margin:0}
+.field-wrap{max-width:550px}
+.planner-content label{font-weight:740;font-size:12px;color:#435b64;line-height:1.5;display:flex;flex-direction:column;gap:8px}
+.planner-content input:not([type="file"]),.planner-content select,.planner-content textarea{width:100%;max-width:100%;border:1px solid #cad9dd;border-radius:10px;background:#fff;color:#203941;padding:12px 13px;font-size:13px;outline:none;min-height:44px}
+.planner-content input:focus,.planner-content select:focus,.planner-content textarea:focus{border-color:#1c9a8c;box-shadow:0 0 0 3px #12948117}
+.planner-content input[type="file"]{font-size:12px;color:#405b63;width:100%;padding:13px;background:#fff;border:1px dashed #a7c6c4;border-radius:10px;min-height:47px}
+.field-tip,.planner-content .help{color:#879ba1;font-size:11px;line-height:1.6;margin:8px 0 0}
+.scenario-overview{margin-top:19px;padding:15px 17px;border:1px solid #e5edef;background:#fafcfc;border-radius:12px}
+.eyebrow{font-size:10px;font-weight:850;letter-spacing:1.25px;color:#80949c;display:block;margin:0 0 10px}
+.scenario-stats{background:transparent;border:0;padding:0;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 14px}
+.scenario-stat-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #e7eff0;color:#657d85;font-size:11px;gap:8px}
+.scenario-stat-row strong{color:#1a5860;font-size:14px;font-weight:850}
+.excel-help{background:#eef7f5;border:1px solid #d8eae5;padding:17px 19px;border-radius:12px;display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:22px}
+.excel-help strong{font-size:13px;color:#245f5a}
+.excel-help p{margin:6px 0 0;font-size:12px;line-height:1.55;color:#5c7b76;max-width:490px}
+.template-link{border:1px solid #9dcfc5;border-radius:10px;padding:12px 14px;white-space:nowrap;font-size:12px;font-weight:850;text-decoration:none;background:#fff;color:#0b756b}
+.template-link:hover{background:#f4fbf8}
+.excel-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px;align-items:start}
+.file-drop{grid-row:span 1}
+.file-drop small{font-size:10px;color:#789298;font-weight:500}
+.excel-actions{display:flex;align-items:center;gap:15px;margin:18px 0 12px}
+.excel-actions .secondary-button{width:auto;min-width:175px}
+.excel-actions .studio-help{margin:0;font-size:12px}
+.step-run{border-color:#d5e5e2}
+.run-row{display:flex;align-items:center;gap:16px}
+.run-row .run-button{width:auto;min-width:230px;padding:16px 25px;border:1px solid #08756c;border-radius:11px;color:white;background:#087d70;box-shadow:0 6px 18px #08867624;font-size:14px;font-weight:800;display:flex;justify-content:center;align-items:center;letter-spacing:0}
+.run-row .run-button:hover{background:#056d62}
+.run-row .run-button:disabled{opacity:.55}
+.run-row .run-state{border:1px solid #d7e8e5;border-radius:50px;font-size:11px;font-weight:700;padding:9px 13px;color:#26726a;background:#f0f9f6}
+.status-line{font-size:12px;color:#526b74;min-height:24px;margin:13px 0 0;line-height:1.7}
+.advanced-details{margin-top:18px;border-top:1px solid #e6edef}
+.advanced-details>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;font-size:12px;font-weight:750;color:#56707a;padding:17px 0}
+.advanced-details>summary::-webkit-details-marker,.nested-details>summary::-webkit-details-marker{display:none}
+.advanced-details>summary::before,.nested-details>summary::before{content:"+";width:20px;height:20px;display:grid;place-items:center;background:#edf3f4;color:#526d75;border-radius:6px;font-weight:850}
+.advanced-details[open]>summary::before,.nested-details[open]>summary::before{content:"−"}
+.optional-tag{font-weight:600;font-size:10px;padding:4px 8px;border-radius:100px;background:#f0f3f4;color:#7a8d93}
+.details-content{padding:12px 0 18px}
+.advanced-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;align-items:end}
+.advanced-grid .secondary-button{margin:0;min-height:44px}
+.nested-details{margin-top:14px;border:1px solid #e1e9eb;border-radius:11px;padding:0 14px;background:#fbfcfc}
+.nested-details>summary{list-style:none;cursor:pointer;font-size:12px;font-weight:750;color:#476773;padding:13px 0;display:flex;align-items:center;gap:9px}
+.nested-details .details-content{padding:6px 0 15px}
+.planner-content .secondary-button{background:#fff;border:1px solid #c6d8db;border-radius:9px;font-size:12px;font-weight:750;color:#246b66;padding:11px 14px;margin:0;display:inline-flex;justify-content:center;align-items:center;min-height:43px;line-height:1.3}
+.planner-content .secondary-button:hover{border-color:#1b8b80;background:#f2faf8}
+.planner-content .secondary-button:disabled,.planner-content .download-button:disabled{opacity:.45;cursor:not-allowed}
+.studio-grid{display:grid;grid-template-columns:minmax(250px,1fr) auto;gap:12px;align-items:end}
+.studio-detail{grid-column:1/-1;background:#edf4f3;color:#648088;padding:10px 12px;border-radius:9px;font-size:12px}
+.studio-editor{margin-top:16px;border-color:#e4eced}
+.studio-edit-grid{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:12px;align-items:end;margin-bottom:13px}
+.studio-edit-grid .secondary-button{margin:0}
+.editor-panel{margin-top:16px}
+.editor-panel textarea{min-height:190px;font-family:ui-monospace,SFMono-Regular,monospace;font-size:12px;line-height:1.5;background:#f4f8f9;color:#36545b;padding:14px;border-color:#c9dcdf}
+.result-card{scroll-margin-top:20px}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:0}
+.kpi{background:#fbfdfd;border:1px solid #e1eaeb;min-height:125px;border-radius:12px;padding:16px;gap:8px}
+.kpi-label{color:#6b858e;font-size:11px;line-height:1.45}
+.kpi-values{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.kpi-main{color:#136b62;font-weight:850;font-size:26px}
+.kpi-old{color:#9baeb3}
+.kpi-detail{color:#789096;font-size:11px;line-height:1.5}
+.kpi-main.good{color:#0e8b70}
+.kpi-main.neutral{color:#2c687d}
+.empty-kpi{background:#fafcfc;color:#8399a0;border:1px dashed #cbdfe1;padding:23px;grid-column:1/-1;border-radius:12px}
+.timeline-head{margin:26px 0 16px;display:flex;justify-content:space-between;align-items:center;gap:15px}
+.timeline-head h3{font-size:16px;color:#243d44;margin:0 0 4px}
+.timeline-head p{color:#7d949a;font-size:11px;margin:0}
+.tab-group{border:1px solid #dfeaec;background:#f1f6f6;border-radius:9px;padding:4px;gap:3px}
+.tab{background:transparent;color:#637f85;border:0;border-radius:7px;padding:9px 12px;font-weight:750;font-size:11px}
+.tab.active{color:#0c7166;background:#fff;box-shadow:0 1px 5px #1b4b471a}
+.timeline{overflow-x:auto;min-height:190px;padding-top:5px}
+.empty-state{color:#78939b;padding:35px 10px;text-align:center}
+.empty-state h3{font-size:16px;color:#617f86}
+.empty-state p{font-size:12px}
+.chart-frame{min-width:600px}
+.timeline-row{border-color:#e3ebed}
+.machine-name{color:#647f85}
+.track{background-image:linear-gradient(to right,#e3ecee 1px,transparent 1px)}
+.axis{color:#778e94}
+.legend{color:#607c83;margin:13px 0 0;font-size:11px}
+.export-row{display:flex;flex-wrap:wrap;gap:10px;margin-top:21px}
+.planner-content .download-button{background:#f4f8f8;border:1px solid #d8e7e7;color:#2d6869;font-weight:750;font-size:12px;white-space:normal;border-radius:9px;padding:12px 14px;width:auto;margin:0}
+.planner-content .download-button:hover:not(:disabled){background:#eaf5f1}
+.research-details{margin-top:19px}
+.experiment-list{grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.meta-key{color:#7c9296}
+.meta-value{color:#275661;overflow-wrap:anywhere}
+.research-note{font-size:11px;color:#779196;margin-top:18px}
+#historyPanel{padding:12px 0}
+#historyPanel h3{font-size:14px;color:#385c65;margin:0 0 11px}
+.planner-content footer{border-top:1px solid #dde8e9;color:#849a9e;padding:22px 0;margin-top:27px;font-size:11px;line-height:1.7}
+@media(max-width:900px){
+  .planner-content{padding:24px 22px 45px}
+  .planner-card{padding:24px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .excel-grid{grid-template-columns:1fr 1fr}.file-drop{grid-column:1/-1}
+  .advanced-grid,.scenario-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .studio-edit-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+  .planner-header{padding:16px 19px;min-height:70px}
+  .planner-header-right{gap:10px}.top-link{display:none}
+  .planner-header .brand-symbol{width:38px;height:38px}
+  .planner-content{padding:18px 14px 30px}
+  .planner-hero{padding:14px 2px 28px}
+  .planner-hero h1{font-size:34px}
+  .planner-hero p{font-size:13px}
+  .workflow-strip{gap:9px;font-size:10px}
+  .workflow-strip .strip-arrow{display:none}
+  .workflow-strip span:not(.strip-arrow){background:#fff;border:1px solid #e0ebec;border-radius:50px;padding:4px 8px}
+  .planner-card{border-radius:14px;padding:20px 17px;margin-bottom:15px}
+  .step-heading{gap:10px;margin-bottom:17px}
+  .step-number{width:31px;height:31px;flex-basis:31px}
+  .step-heading h2{font-size:18px}.step-heading p{font-size:12px}
+  .mode-switch{grid-template-columns:1fr;gap:8px}
+  .mode-option{min-height:67px;padding:12px}
+  .excel-help{flex-direction:column;align-items:stretch;gap:12px}
+  .template-link{text-align:center}
+  .excel-grid,.advanced-grid,.studio-grid,.studio-edit-grid{grid-template-columns:1fr}
+  .scenario-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .run-row{flex-direction:column;align-items:stretch}
+  .run-row .run-button{width:100%}
+  .run-row .run-state{align-self:flex-start}
+  .timeline-head{align-items:flex-start;flex-direction:column}
+  .tab-group{width:100%;display:flex}
+  .tab{flex:1}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .kpi{padding:12px;min-height:115px}
+  .kpi-main{font-size:22px}
+  .export-row{flex-direction:column}
+  .planner-content .download-button{width:100%}
+  .experiment-list{grid-template-columns:1fr 1fr}
+  .excel-actions{flex-direction:column;align-items:stretch}
+  .excel-actions .secondary-button{width:100%}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
