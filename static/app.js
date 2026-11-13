@@ -78,7 +78,7 @@ function renderResult() {
   if(isMakespan){
     const target=currentScenario.benchmark_known_optimum_makespan;
     area.replaceChildren(
-      kpi('Makespan · hours',o.makespan,b.makespan, improvement===null?'Baseline is zero':`${improvement.toFixed(2)}% shorter vs. ${baselineName}`,o.makespan<b.makespan),
+      kpi('Makespan · '+(currentScenario.benchmark_source?'time units':'hours'),o.makespan,b.makespan, improvement===null?'Baseline is zero':`${improvement.toFixed(2)}% shorter vs. ${baselineName}`,o.makespan<b.makespan),
       kpi('Published benchmark optimum',target??'N/A',null, target===undefined?'Not a public benchmark':o.makespan===target?'Reached published value':'Reference target',false),
       kpi('Scheduled operations',o.machine_busy_hours?Object.values(o.machine_busy_hours).reduce((a,b)=>a+b,0)+' machine-hours':'—',null,'Total processing machine-hours',false),
       kpi('Solve time · sec',sol.solve_seconds.toFixed(3),null,sol.optimality_proven?'Mathematical optimum proven':'Feasible result; proof not obtained',false)
@@ -114,21 +114,29 @@ function renderTimeline() {
   const frame=e('div',undefined,'chart-frame');
   const jobIds=currentScenario.jobs.map(j=>j.id);const jobColors=Object.fromEntries(jobIds.map((name,i)=>[name,COLORS[i%COLORS.length]]));
   const percent=v=>(100*v/horizon).toFixed(4)+'%';
+  const unit=currentScenario.benchmark_source?'units':'h';
+  const replanningClock=lastResult.planning_clock;
   for(const machine of machines){
     const row=e('div',undefined,'timeline-row');row.append(e('div',machine.id,'machine-name'));
     const track=e('div',undefined,'track');
     for(const down of machine.downtime||[]){const bar=e('div',undefined,'downtime-bar');bar.style.left=percent(down.start);bar.style.width=percent(down.end-down.start);bar.title=`Maintenance: ${down.start}–${down.end}h`;track.append(bar)}
     for(const task of schedule.filter(t=>t.machine===machine.id)){
       const bar=e('div',task.job,'task-bar');bar.style.left=percent(task.start);bar.style.width=percent(task.duration);
-      bar.style.background=jobColors[task.job];bar.title=`${task.job} | ${task.operation} | ${task.start}–${task.end}h`;track.append(bar)}
+      bar.style.background=jobColors[task.job];
+      const frozen=Number.isInteger(replanningClock)&&task.start<replanningClock;
+      if(frozen)bar.classList.add('frozen');
+      bar.title=`${task.job} | ${task.operation} | ${task.start}–${task.end} ${unit}`+(frozen?' | Frozen: already started':'');
+      track.append(bar)}
+    if(Number.isInteger(replanningClock)) {const clock=e('div',undefined,'planning-clock');clock.style.left=percent(replanningClock);clock.title=`Current simulated factory time: ${replanningClock}`;track.append(clock)}
     row.append(track);frame.append(row)
   }
   const axis=e('div',undefined,'axis');const steps=10;
-  for(let i=0;i<=steps;i++){let mark=e('span',String(Math.round(horizon*i/steps))+'h','axis-mark');mark.style.left=(100*i/steps)+'%';axis.append(mark)}
+  for(let i=0;i<=steps;i++){let mark=e('span',String(Math.round(horizon*i/steps))+unit,'axis-mark');mark.style.left=(100*i/steps)+'%';axis.append(mark)}
   frame.append(axis);plot.append(frame);
   const lg=$('chartLegend');lg.replaceChildren();
   for(const name of jobIds){const item=e('span',undefined,'legend-item'),dot=e('span',undefined,'legend-dot');dot.style.background=jobColors[name];item.append(dot,e('span',name));lg.append(item)}
   const item=e('span',undefined,'legend-item'),dot=e('span',undefined,'legend-dot');dot.style.background='#75465b';item.append(dot,e('span','Maintenance'));lg.append(item);
+  if(Number.isInteger(replanningClock)){const fixed=e('span',undefined,'legend-item');fixed.append(e('span','▣'),'Started/locked operations');lg.append(fixed)}
 }
 function setTab(name){activeView=name;$('tabOptimized').classList.toggle('active',name==='optimized');$('tabBaseline').classList.toggle('active',name==='baseline');renderTimeline()}
 async function run(){
