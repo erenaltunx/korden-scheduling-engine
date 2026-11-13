@@ -11,6 +11,8 @@ from pydantic import BaseModel, Field
 from typing import Literal
 from .baseline import POLICIES
 from .service import compare
+from .reschedule import reschedule
+from .public_benchmarks import PUBLIC_INSTANCES, load_jsplib
 from .storage import get_experiment, list_experiments, save_experiment
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -18,7 +20,7 @@ PUBLIC_DEMO = os.getenv("KORDEN_PUBLIC_DEMO", "0").lower() in {"1", "true", "yes
 # Public demo is not multi-tenant: it must NEVER expose or persist private experiments.
 MAX_REQUEST_BYTES = 128 * 1024
 PUBLIC_SOLVER_SLOTS = BoundedSemaphore(value=2)
-app = FastAPI(title="KORDEN — Industrial Scheduling & Optimization", version="0.4.0")
+app = FastAPI(title="KORDEN — Industrial Scheduling & Optimization", version="0.5.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
@@ -27,6 +29,36 @@ class RunRequest(BaseModel):
     time_limit: float = Field(default=8.0, ge=0.5, le=60)
     engine: str = Field(default="milp_highs", max_length=40)
     baseline_policy: Literal["edd", "fifo", "spt", "wspt"] = "edd"
+    objective: Literal["weighted_tardiness", "makespan"] = "weighted_tardiness"
+
+
+class RescheduleRequest(BaseModel):
+    scenario: dict
+    prior_schedule: list[dict]
+    now: int = Field(ge=0, le=10000)
+    machine_id: str = Field(min_length=1, max_length=100)
+    outage_start: int = Field(ge=0, le=10000)
+    outage_end: int = Field(ge=1, le=10000)
+    time_limit: float = Field(default=8.0, ge=0.5, le=60)
+    baseline_policy: Literal["edd", "fifo", "spt", "wspt"] = "edd"
+    objective: Literal["weighted_tardiness", "makespan"] = "weighted_tardiness"
+
+
+def public_solver_check(scenario: dict, time_limit: float):
+    if not PUBLIC_DEMO:
+        return
+    jobs = scenario.get('jobs', [])
+    if time_limit > 5:
+        raise HTTPException(status_code=422, detail='Public demo solver limit is 5 seconds')
+    if not isinstance(jobs, list) or len(jobs) > 8:
+        raise HTTPException(status_code=422, detail='Public demo supports at most 8 orders')
+    if sum(len(j.get('operations', [])) for j in jobs if isinstance(j, dict)) > 24:
+        raise HTTPException(status_code=422, detail='Public demo supports at most 24 operations')
+
+
+def acquire_public_slot():
+    if PUBLIC_DEMO and not PUBLIC_SOLVER_SLOTS.acquire(blocking=False):
+        raise HTTPException(status_code=429, detail='Solver busy. Please try again shortly.')
 
 
 @app.middleware("http")
@@ -59,14 +91,15 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "application": "KORDEN", "version": "0.4.0"}
+    return {"status": "ok", "application": "KORDEN", "version": "0.5.0"}
 
 
 @app.get("/api/config")
 def config():
     return {"public_demo": PUBLIC_DEMO, "max_solver_seconds": 5 if PUBLIC_DEMO else 60,
             "max_orders": 8 if PUBLIC_DEMO else 30, "schema_version": 1,
-            "archive_enabled": not PUBLIC_DEMO, "baseline_policies": POLICIES}
+            "archive_enabled": not PUBLIC_DEMO, "baseline_policies": POLICIES,
+            "objectives": ['weighted_tardiness', 'makespan']}
 
 
 @app.get("/api/scenarios")
@@ -87,20 +120,12 @@ def load_scenario(scenario_id: str):
 
 @app.post("/api/run")
 def run_schedule(payload: RunRequest):
-    if PUBLIC_DEMO:
-        jobs = payload.scenario.get("jobs", [])
-        if payload.time_limit > 5:
-            raise HTTPException(status_code=422, detail="Public demo solver limit is 5 seconds")
-        if not isinstance(jobs, list) or len(jobs) > 8:
-            raise HTTPException(status_code=422, detail="Public demo supports at most 8 orders")
-        if sum(len(j.get("operations", [])) for j in jobs if isinstance(j, dict)) > 24:
-            raise HTTPException(status_code=422, detail="Public demo supports at most 24 operations")
-        if not PUBLIC_SOLVER_SLOTS.acquire(blocking=False):
-            raise HTTPException(status_code=429, detail="Solver busy. Please try again shortly.")
+    public_solver_check(payload.scenario, payload.time_limit)
+    acquire_public_slot()
     try:
         try:
             result = compare(payload.scenario, payload.time_limit, engine=payload.engine,
-                             baseline_policy=payload.baseline_policy)
+                             baseline_policy=payload.baseline_policy, objective=payload.objective)
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
         if PUBLIC_DEMO:
@@ -128,3 +153,37 @@ def history_item(run_id: str):
     if record is None:
         raise HTTPException(status_code=404, detail="Unknown experiment")
     return record
+
+
+@app.post('/api/reschedule')
+def run_rolling_reschedule(payload: RescheduleRequest):
+    """Non-preemptive real-time replay; refuses to rewrite execution history."""
+    public_solver_check(payload.scenario, payload.time_limit)
+    acquire_public_slot()
+    try:
+        try:
+            output = reschedule(payload.scenario, payload.prior_schedule, payload.now,
+                                payload.machine_id, payload.outage_start, payload.outage_end,
+                                payload.time_limit, payload.baseline_policy, payload.objective)
+        except ValueError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+        if PUBLIC_DEMO:
+            return {**output, 'persisted': False}
+        run_id = save_experiment(output['revised_scenario'], output)
+        return {**output, 'persisted': True, 'run_id': run_id}
+    finally:
+        if PUBLIC_DEMO:
+            PUBLIC_SOLVER_SLOTS.release()
+
+
+@app.get('/api/public-benchmarks')
+def public_benchmarks():
+    return [{'id': x, 'name': f'JSPLIB {x.upper()} — published optimum {opt}h',
+             'known_optimum_makespan': opt} for x,opt in PUBLIC_INSTANCES.items()]
+
+
+@app.get('/api/public-benchmarks/{name}')
+def get_public_benchmark(name: str):
+    if name not in PUBLIC_INSTANCES:
+        raise HTTPException(status_code=404, detail='Unknown benchmark')
+    return load_jsplib(name)

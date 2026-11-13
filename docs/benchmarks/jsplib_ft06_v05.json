@@ -1,0 +1,29 @@
+{
+  "instance": "ft06",
+  "proven_known_optimum_makespan": 55,
+  "num_jobs": 6,
+  "num_operations": 36,
+  "baseline_makespans": {
+    "edd": 71,
+    "fifo": 71,
+    "spt": 94,
+    "wspt": 94
+  },
+  "best_baseline_makespan": 71,
+  "solver_makespan": 55,
+  "gap_to_known_optimum_pct": 0.0,
+  "solver": {
+    "status": "optimal",
+    "solver": "SciPy MILP / HiGHS",
+    "objective": "makespan",
+    "frozen_operations": 0,
+    "solve_seconds": 0.134,
+    "model_variables": 169,
+    "model_constraints": 294,
+    "optimality_proven": true,
+    "relative_mip_gap": 0.0
+  },
+  "proven_optimality_matches_reference": true,
+  "source": "https://github.com/tamy0612/JSPLIB/blob/master/instances/ft06",
+  "warning": "Published JSP synthetic benchmark, minimizing makespan; not factory savings or tardiness performance."
+}

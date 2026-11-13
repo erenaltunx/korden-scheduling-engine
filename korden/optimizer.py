@@ -59,21 +59,43 @@ class LinearModel:
                     options={"time_limit": time_limit, "mip_rel_gap": 0.0})
 
 
-def optimize(data: dict, time_limit: float = 8.0) -> dict:
+def optimize(data: dict, time_limit: float = 8.0, *,
+             fixed_operations: dict[str, dict] | None = None,
+             not_before: int = 0, objective: str = "weighted_tardiness") -> dict:
     validate_scenario(data)
     if not (0.5 <= time_limit <= 60):
         raise ValueError("Solver time limit must be between 0.5 and 60 seconds")
+    if objective not in {"weighted_tardiness", "makespan"}:
+        raise ValueError("Unknown objective; choose weighted_tardiness or makespan")
+    if type(not_before) is not int or not 0 <= not_before <= 10000:
+        raise ValueError("not_before must be an integer hour between 0 and 10000")
+    fixed_operations = fixed_operations or {}
     tasks = all_tasks(data)
+    known_keys = {t.key for t in tasks}
+    if set(fixed_operations) - known_keys:
+        raise ValueError("Fixed operations contain unknown task keys")
     by_job = {j["id"]: j for j in data["jobs"]}
     windows = downtime_by_machine(data)
     h = horizon(data)
     big_m = h + max(t.duration for t in tasks)
     m = LinearModel()
-    starts = {t.key: m.var(f"start:{t.key}", 0, h - t.duration) for t in tasks}
+    starts = {}
+    for t in tasks:
+        if t.key in fixed_operations:
+            start = fixed_operations[t.key]["start"]
+            if type(start) is not int or not 0 <= start <= h - t.duration:
+                raise ValueError(f"Invalid fixed start for {t.key}")
+            starts[t.key] = m.var(f"start:{t.key}", start, start)
+        else:
+            starts[t.key] = m.var(f"start:{t.key}", not_before, h - t.duration)
     assignments = {}
     for t in tasks:
         for machine in t.machines:
-            assignments[(t.key, machine)] = m.var(f"machine:{t.key}:{machine}")
+            if t.key in fixed_operations:
+                choice = int(fixed_operations[t.key]["machine"] == machine)
+                assignments[(t.key, machine)] = m.var(f"machine:{t.key}:{machine}", choice, choice)
+            else:
+                assignments[(t.key, machine)] = m.var(f"machine:{t.key}:{machine}")
         m.row({assignments[(t.key, mid)]: 1 for mid in t.machines}, lb=1, ub=1)
         if t.index == 0:
             m.row({starts[t.key]: 1}, lb=by_job[t.job_id]["release"])
@@ -109,14 +131,16 @@ def optimize(data: dict, time_limit: float = 8.0) -> dict:
     for job in data["jobs"]:
         last_key = f"{job['id']}::{len(job['operations'])-1}"
         duration = tasks[next(i for i, t in enumerate(tasks) if t.key == last_key)].duration
-        tard = m.var(f"tardiness:{job['id']}", 0, h, cost=(h+1)*job["weight"])
+        tard = m.var(f"tardiness:{job['id']}", 0, h, cost=(h+1)*job["weight"] if objective == "weighted_tardiness" else 0.0)
         m.row({tard: 1, starts[last_key]: -1}, lb=duration - job["due"])
     clock = perf_counter()
     result = m.solve(time_limit)
     elapsed = perf_counter() - clock
     metadata = {"status": "optimal" if result.status == 0 else
                           "time_limit_with_solution" if result.x is not None else "no_feasible_solution",
-                "solver": "SciPy MILP / HiGHS", "solve_seconds": round(elapsed, 3),
+                "solver": "SciPy MILP / HiGHS", "objective": objective,
+                "frozen_operations": len(fixed_operations),
+                "solve_seconds": round(elapsed, 3),
                 "model_variables": len(m.vars), "model_constraints": len(m.rows),
                 "optimality_proven": result.status == 0,
                 "relative_mip_gap": float(getattr(result, "mip_gap", 0) or 0)

@@ -72,6 +72,47 @@ jobs:
           name: korden-four-policy-benchmark
           path: artifacts/lab.*
 
+  external-reference-benchmark:
+    name: FT06 published optimum regression
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python public_benchmark.py --instance ft06 --time-limit 5 --out artifacts/ft06.json
+      - name: Verify result and provenance
+        run: |
+          python - <<'PYCODE'
+          import json
+          a=json.load(open('artifacts/ft06.json'))
+          assert a['solver_makespan']==55 and a['proven_optimality_matches_reference']
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: korden-external-ft06
+          path: artifacts/ft06.json
+
+  disruption-replay:
+    name: Frozen-history disruption regression
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python disruption_lab.py --count 10 --time-limit 3 --out artifacts/disruption
+      - uses: actions/upload-artifact@v4
+        with:
+          name: korden-rolling-reschedule-replay
+          path: artifacts/disruption.*
+
   reproducible-benchmark:
     name: Reproducible scheduling benchmark
     needs: tests
@@ -105,5 +146,6 @@ jobs:
           done
           curl -fsS http://127.0.0.1:8000/api/health | grep -q KORDEN
           curl -fsS http://127.0.0.1:8000/ | grep -q KORDEN
+          curl -fsS http://127.0.0.1:8000/api/public-benchmarks/ft06 | grep -q JSPLIB
       - if: always()
         run: docker logs korden-smoke || true

@@ -11,7 +11,7 @@ from .optimizer import optimize
 ENGINES: dict[str, Callable[[dict, float], dict]] = {"milp_highs": optimize}
 
 
-def optimize_with(engine: str, scenario: dict, time_limit: float) -> dict:
+def optimize_with(engine: str, scenario: dict, time_limit: float, **options) -> dict:
     if engine not in ENGINES:
         raise ValueError(f"Unsupported optimizer engine: {engine}")
-    return ENGINES[engine](scenario, time_limit)
+    return ENGINES[engine](scenario, time_limit, **options)
