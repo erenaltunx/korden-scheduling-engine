@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "name": "Regional Equipment Service Dispatch",
+  "industry": "Field service",
+  "time_unit": "hour",
+  "resources": [
+    {
+      "id": "TECH_A",
+      "name": "Technician Alex",
+      "kind": "field_technician",
+      "capabilities": [
+        "diagnostics",
+        "electrical"
+      ],
+      "unavailable": [
+        {
+          "start": 8,
+          "end": 10
+        }
+      ]
+    },
+    {
+      "id": "TECH_B",
+      "name": "Technician Bea",
+      "kind": "field_technician",
+      "capabilities": [
+        "diagnostics",
+        "electrical",
+        "mechanical"
+      ],
+      "unavailable": []
+    },
+    {
+      "id": "TECH_C",
+      "name": "Technician Cem",
+      "kind": "field_technician",
+      "capabilities": [
+        "mechanical"
+      ],
+      "unavailable": []
+    }
+  ],
+  "work_orders": [
+    {
+      "id": "SERVICE_1",
+      "name": "Motor diagnostic visit",
+      "available_at": 0,
+      "due_at": 6,
+      "priority": 5,
+      "steps": [
+        {
+          "id": "diagnose",
+          "name": "Run diagnosis",
+          "duration": 3,
+          "requires_all": [
+            "diagnostics"
+          ]
+        },
+        {
+          "id": "repair",
+          "name": "Mechanical repair",
+          "duration": 3,
+          "requires_all": [
+            "mechanical"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SERVICE_2",
+      "name": "Control panel inspection",
+      "available_at": 1,
+      "due_at": 7,
+      "priority": 3,
+      "steps": [
+        {
+          "id": "inspect",
+          "name": "Electrical panel inspection",
+          "duration": 4,
+          "requires_all": [
+            "electrical"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SERVICE_3",
+      "name": "Conveyor service",
+      "available_at": 0,
+      "due_at": 10,
+      "priority": 2,
+      "steps": [
+        {
+          "id": "repair",
+          "name": "Replace belt assembly",
+          "duration": 5,
+          "requires_all": [
+            "mechanical"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SERVICE_4",
+      "name": "Urgent electrical fault",
+      "available_at": 1,
+      "due_at": 6,
+      "priority": 9,
+      "steps": [
+        {
+          "id": "diagnose",
+          "name": "Electrical diagnostics",
+          "duration": 5,
+          "requires_all": [
+            "diagnostics",
+            "electrical"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SERVICE_5",
+      "name": "Maintenance overhaul",
+      "available_at": 0,
+      "due_at": 12,
+      "priority": 1,
+      "steps": [
+        {
+          "id": "inspect",
+          "name": "Mechanical inspection",
+          "duration": 3,
+          "requires_all": [
+            "mechanical"
+          ]
+        },
+        {
+          "id": "repair",
+          "name": "Mechanical service",
+          "duration": 5,
+          "requires_all": [
+            "mechanical"
+          ]
+        }
+      ]
+    }
+  ]
+}

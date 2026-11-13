@@ -21,7 +21,7 @@ PUBLIC_DEMO = os.getenv("KORDEN_PUBLIC_DEMO", "0").lower() in {"1", "true", "yes
 # Public demo is not multi-tenant: it must NEVER expose or persist private experiments.
 MAX_REQUEST_BYTES = 128 * 1024
 PUBLIC_SOLVER_SLOTS = BoundedSemaphore(value=2)
-app = FastAPI(title="KORDEN — Cross-Industry Resource Optimization", version="0.6.0")
+app = FastAPI(title="KORDEN — Cross-Industry Resource Optimization", version="0.7.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
@@ -96,7 +96,7 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "application": "KORDEN", "version": "0.6.0"}
+    return {"status": "ok", "application": "KORDEN", "version": "0.7.0"}
 
 
 @app.get("/api/config")

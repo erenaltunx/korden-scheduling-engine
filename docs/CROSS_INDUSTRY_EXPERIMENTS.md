@@ -6,7 +6,7 @@ The same solver + independent schedule validator were used for three completely 
 
 ```bash
 python -m pytest -q
-python universal_benchmark.py --limit 8 --out artifacts/cross_industry
+python universal_benchmark.py --dataset-dir samples/archives/v06 --limit 8 --out artifacts/cross_industry_v06
 ```
 
 The benchmark selects the strongest of four classical policies (EDD, FIFO, SPT, WSPT) **per scenario** and compares the optimized schedule with that policy using the same integer time unit. Both baseline and optimized schedules are validated by the independent feasibility checker. Tests assess constraints, APIs and fail-closed unknown fields, not just numeric outcomes.
@@ -21,4 +21,4 @@ These are **weighted units of lateness**, not currency. Manufacturing/service us
 
 **Limitations:** only three small manually authored examples, not a statistical sample, no stochastic effects, travel or materials, and the selected baselines may already be optimal. These figures are not a forecast of savings at a real business, nor an advertised general cross-industry performance percentage. Use the 60-instance synthetic benchmark and independent JSPLib study separately, with their own objectives and caveats.
 
-Machine-readable inputs: `samples/universal/*.json`; detailed per-policy results: `docs/benchmarks/cross_industry_v06.json` and `.csv`.
+Historical v0.6 inputs, frozen before concurrent-resource upgrades: `samples/archives/v06/*.json`; detailed per-policy results: `docs/benchmarks/cross_industry_v06.json` and `.csv`.

@@ -18,8 +18,9 @@ from korden.universal import normalize_universal, describe_universal
 ROOT = Path(__file__).resolve().parent
 
 
-def benchmark_sector(name: str, time_limit: float = 8.0) -> dict:
-    source = json.loads((ROOT / 'samples' / 'universal' / (name+'.json')).read_text('utf-8'))
+def benchmark_sector(name: str, time_limit: float = 8.0,
+                     dataset_dir: Path | None = None) -> dict:
+    source = json.loads(((dataset_dir or ROOT / 'samples' / 'universal') / (name+'.json')).read_text('utf-8'))
     scenario = normalize_universal(source)
     profile = describe_universal(source)
     baselines = []
@@ -55,8 +56,9 @@ def benchmark_sector(name: str, time_limit: float = 8.0) -> dict:
     }
 
 
-def run(names: list[str], limit: float, output: Path) -> list[dict]:
-    results = [benchmark_sector(name, limit) for name in names]
+def run(names: list[str], limit: float, output: Path,
+        dataset_dir: Path | None = None) -> list[dict]:
+    results = [benchmark_sector(name, limit, dataset_dir) for name in names]
     output.parent.mkdir(parents=True, exist_ok=True)
     output.with_suffix('.json').write_text(json.dumps(results, indent=2), encoding='utf-8')
     cols = ['template','industry','time_unit','resources','work_orders','steps',
@@ -75,8 +77,10 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='KORDEN cross-industry model regression')
     parser.add_argument('--limit', type=float, default=8.0)
     parser.add_argument('--out', type=Path, default=Path('artifacts/universal_sectors'))
+    parser.add_argument('--dataset-dir', type=Path, default=None,
+                        help='Immutable workload source folder for historical reproduction')
     args = parser.parse_args()
-    outcome = run(['manufacturing','field_service','warehouse'], args.limit, args.out)
+    outcome = run(['manufacturing','field_service','warehouse'], args.limit, args.out, args.dataset_dir)
     for item in outcome:
         print(f"{item['industry']}: baseline={item['best_baseline']['weighted_tardiness']}, "
               f"optimized={item['optimized_weighted_tardiness']}, "

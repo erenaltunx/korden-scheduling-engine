@@ -30,7 +30,10 @@ def check_schedule(data: dict, schedule: list[dict]) -> list[str]:
             continue
         if t.index == 0 and start < jobs[t.job_id]["release"]:
             errors.append(f"{key} starts before release")
-        occupied[machine].append((start, end, key))
+        if s.get('support_resources', []) != list(t.support_resources):
+            errors.append(f"{key} has incorrect simultaneous support resource reservations")
+        for rid in [machine, *t.support_resources]:
+            occupied[rid].append((start, end, key))
     missing = set(tasks) - set(by_key)
     errors.extend(f"Missing operation {k}" for k in sorted(missing))
     for job in data["jobs"]:
@@ -62,7 +65,10 @@ def evaluate(data: dict, schedule: list[dict]) -> dict:
                                       for j in data["jobs"])
     total_tardiness = sum(max(0, completions[j["id"]] - j["due"]) for j in data["jobs"])
     makespan = max(s["end"] for s in schedule)
-    busy = {m["id"]: sum(s["duration"] for s in schedule if s["machine"] == m["id"])
+    # This is allocated resource-time (primary plus any simultaneous support).
+    # Historical field name retained for compatibility with saved experiments.
+    busy = {m["id"]: sum(s["duration"] for s in schedule
+                         if s["machine"] == m["id"] or m["id"] in s.get('support_resources', []))
             for m in data["machines"]}
     return {"weighted_tardiness": int(total_weighted_tardiness),
             "total_tardiness": int(total_tardiness), "late_jobs": int(late),

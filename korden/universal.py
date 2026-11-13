@@ -116,7 +116,7 @@ def normalize_universal(scenario: dict) -> dict:
         for j, raw_step in enumerate(steps):
             place = f'{loc}.steps[{j}]'
             step = _mapping(raw_step, place, {
-                'id', 'name', 'duration', 'requires_all', 'eligible_resources'
+                'id', 'name', 'duration', 'requires_all', 'eligible_resources', 'reserve_resources'
             })
             sid = _name(step, 'id', place)
             _name(step, 'name', place)
@@ -136,7 +136,15 @@ def normalize_universal(scenario: dict) -> dict:
             eligible = [rid for rid in explicit if set(requirements).issubset(known_resources[rid])]
             if not eligible:
                 raise ValueError(f'{place} has no resource satisfying all required capabilities')
-            compiled_steps.append({'id': sid, 'duration': duration, 'machines': eligible})
+            reserved = step.get('reserve_resources', [])
+            if (not isinstance(reserved, list) or any(
+                    not isinstance(r, str) or r not in known_resources for r in reserved
+                    ) or len(set(reserved)) != len(reserved)):
+                raise ValueError(f'{place}.reserve_resources must be unique known resource IDs')
+            if set(reserved) & set(eligible):
+                raise ValueError(f'{place}.reserve_resources cannot also be primary-resource candidates')
+            compiled_steps.append({'id': sid, 'duration': duration, 'machines': eligible,
+                                   **({'support_resources': reserved} if reserved else {})})
             step_count += 1
         compiled_orders.append({
             'id': oid, 'release': start, 'due': due, 'weight': priority,
@@ -163,10 +171,10 @@ def describe_universal(scenario: dict) -> dict:
         'work_orders': len(compiled['jobs']),
         'steps': sum(len(job['operations']) for job in compiled['jobs']),
         'capabilities': sorted({cap for r in scenario['resources'] for cap in r.get('capabilities', [])}),
-        'model_scope': ['one exclusive resource per step', 'sequential steps per order',
+        'model_scope': ['one primary resource per step with optional fixed simultaneous support resources', 'sequential steps per order',
                         'integer time grid', 'fixed resource unavailability',
                         'weighted tardiness or makespan'],
-        'unsupported': ['simultaneous multi-resource teams', 'batch capacities',
+        'unsupported': ['alternative support-resource selection', 'variable-size teams', 'batch capacities',
                         'travel times', 'sequence-dependent setup times',
                         'materials/inventory', 'cross-order precedence', 'stochastic processing'],
     }

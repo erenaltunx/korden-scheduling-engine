@@ -51,13 +51,21 @@ def dispatch(data: dict, policy: str = "edd") -> list[dict]:
         for i, op in enumerate(job["operations"]):
             options = []
             for machine in op["machines"]:
-                start = earliest_slot(ready, op["duration"], occupied[machine])
+                reserved = op.get('support_resources', [])
+                # Simultaneous occupancy: all support resources must be free
+                # throughout the primary resource's entire processing interval.
+                taken = occupied[machine] + [window for rid in reserved for window in occupied[rid]]
+                start = earliest_slot(ready, op["duration"], taken)
                 options.append((start + op["duration"], start, machine))
             end, start, machine = min(options)
-            schedule.append({"key": f"{job['id']}::{i}", "job": job["id"],
-                             "operation": op["id"], "machine": machine,
-                             "start": int(start), "end": int(end), "duration": op["duration"]})
-            occupied[machine].append((start, end))
+            row = {"key": f"{job['id']}::{i}", "job": job["id"],
+                   "operation": op["id"], "machine": machine,
+                   "start": int(start), "end": int(end), "duration": op["duration"]}
+            if op.get('support_resources'):
+                row['support_resources'] = list(op['support_resources'])
+            schedule.append(row)
+            for rid in [machine, *op.get('support_resources', [])]:
+                occupied[rid].append((start, end))
             ready = end
     return sorted(schedule, key=lambda x: (x["start"], x["machine"], x["key"]))
 

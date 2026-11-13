@@ -34,3 +34,12 @@
 - Guided web editing of order due times, priorities and resource unavailability without writing JSON.
 - Cross-industry benchmark tool + real CI checks; domain-scoped technical vision and explicit unsupported-constraint matrix.
 - Existing v1 factory scenarios, historic experiments and optimizer behavior preserved.
+
+
+## v0.7.0 — Simultaneous resource reservations (2026-11-13)
+- A step may reserve explicitly named supporting resources concurrently with a primary skill-matched resource.
+- MILP, four classical baselines, independent verifier, rolling replay and Gantt now honor these reservations.
+- Illustrative manufacturing, field-service and warehouse workflows include a shared operator/vehicle/packing worker.
+- Historical v0.6 data archived and proven reproducible despite evolving sector sample constraints.
+- Negative tests prove shared support resources cannot be double-booked or scheduled during unavailability.
+- Dynamic staff selection, travel times and multi-capacity resources remain unmodeled.

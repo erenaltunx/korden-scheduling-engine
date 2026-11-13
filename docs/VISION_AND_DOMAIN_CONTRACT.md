@@ -17,22 +17,22 @@ Different industries share one operational problem: a finite set of **exclusive 
 
 - **Resources:** exclusive (capacity 1), each with an ID, name, kind, a set of capabilities and fixed intervals of unavailability.
 - **Work orders:** when work can start, when work is due, and an integer priority weight.
-- **Steps:** positive integer processing duration, ordered sequentially within an order. Each step requires all specified skills and is assigned to **one** eligible resource.
+- **Steps:** positive integer processing duration, sequential within an order. Each step chooses **one primary** resource matching required skills and can also reserve **named supporting resources simultaneously** for its whole execution interval (v0.7). Every occupied resource is checked independently.
 - **Time:** either integer *hours* or integer *minutes*, declared per scenario; the engine does not silently convert units or infer time zones.
 - **Objective:** weighted tardiness (priority × lateness) or overall makespan; MILP/HiGHS is time-bounded and only claims optimality when proven.
 - **Independent feasibility:** no resource overlap, operation precedence, release times, resource eligibility and resource-unavailability windows.
 
 ### Explicitly NOT modeled
 
-Simultaneous assignment of operator and machine; multiple staff per task; capacity >1 / batching; travel and routing; inventory/material availability; setup/changeover times; non-linear costs; cross-order dependency networks; timezone/DST calendars; probabilistic disruptions; fatigue; contractual/labor/regulatory rules; reservations of external third-party resources. If the input tries to specify an unknown constraint, the adapter **rejects the request**, instead of silently ignoring the rule and generating a deceptively feasible plan.
+Automatic selection of the best alternative support team; variable-size teams; capacity >1 / batching; travel and routing; inventory/material availability; setup/changeover times; non-linear costs; cross-order dependency networks; timezone/DST calendars; probabilistic disruptions; fatigue; contractual/labor/regulatory rules; reservations of external third-party resources. If the input tries to specify an unknown constraint, the adapter **rejects the request**, instead of silently ignoring the rule and generating a deceptively feasible plan.
 
 ## Scenarios and modeled resource capability
 
 | Industry example | What an order means | Resources | Sample capabilities | Not included |
 |---|---|---|---|---|
-| Discrete manufacturing | component batch | CNC mills, QC bench | `milling`, `inspection` | material shortages, combined machinist + CNC |
-| Field service | maintenance ticket | qualified technicians | `mechanical`, `electrical`, `diagnostics` | travel times, customer site locations |
-| Warehouse | fulfillment batch | picking and packing stations | `pick`, `pack` | simultaneous human + station, parcel carriers |
+| Discrete manufacturing | component batch | CNC mills, QC bench, fixed CNC operator | `milling`, `inspection` | material shortages, automated operator selection |
+| Field service | maintenance ticket | qualified technicians and shared service vehicle | `mechanical`, `electrical`, `diagnostics` | travel times, customer site locations |
+| Warehouse | fulfillment batch | picking and packing stations, fixed packing worker | `pick`, `pack` | variable crews, parcel carriers |
 
 All samples are **fictional illustrations**. An additional healthcare/laboratory adapter must not be described as clinically safe without workflow-specific validation and governance.
 
@@ -49,7 +49,15 @@ All samples are **fictional illustrations**. An additional healthcare/laboratory
 ## Milestone sequence
 
 - **v0.6 — Universal resource contract:** 3 sectors, API, guided edits, synthetic benchmarks, strict capability matching and explicit scope limitations.
-- **v0.7 — Hard constraint depth:** simultaneous resource occupancy (e.g. machine + operator), shifts/calendars, setup/changeover, rigorous independent validator and CP-SAT feasibility comparison.
+- **v0.7 — Hard constraint depth:** fixed simultaneous resource occupancy (e.g. machine + operator), independent verifier, historical scenario snapshot regression. **Remaining:** flexible team allocation, shifts/calendars, setup/changeover and CP-SAT comparison.
 - **v0.8 — Planning under change:** disruption handling for canonical scenarios, commitment stability vs tardiness trade-offs, robust scenarios and pause/approve/restore behavior.
 - **v0.9 — Real integrations:** explicit CSV/ERP adapter contracts, data quality checks, versioned snapshots and provenance; multi-tenant authentication/security review before handling sensitive records.
 - **v1.0 — Case study:** independent benchmarks, reproducible scripts, latency/scaling experiments, explainable trade-offs, hosted synthetic demo, operator validation and a documented set of honest claims.
+
+## v0.7: named simultaneous supporting resource reservations
+
+A step can include `"reserve_resources": ["OPERATOR_1"]`, alongside a capability-based primary resource choice. This means the support resource is occupied for exactly the same interval as the selected primary resource. Both classical baseline policies and the HiGHS MILP include the reservation in their resource conflict/downtime constraints. The independent verifier rejects missing, overlapping or invalid bookings. A rolling replay also freezes support reservations on started work.
+
+This does not provide arbitrary crew planning: the support resource IDs are explicitly specified by the input, not dynamically chosen by the optimizer. All reservations remain exclusive and capacity one. A later version must add optional supporting skill pools and team assignment, with separate solver and validator tests.
+
+Historical v0.6 workload examples are frozen in `samples/archives/v06/`; rerun their exact benchmark with `python universal_benchmark.py --dataset-dir samples/archives/v06 --out artifacts/v06`, so product evolution cannot quietly rewrite previous research evidence.

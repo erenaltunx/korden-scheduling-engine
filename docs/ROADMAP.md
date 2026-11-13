@@ -95,7 +95,8 @@ The core evidence is not a dashboard screenshot but a **reproducible numerical i
 - [x] No-JSON UI controls to edit due dates, priority and unavailability.
 - [x] Reproducible three-sector, best-of-four benchmark and CI test.
 - [ ] Cross-industry rolling-reschedule adapter with formal execution state transitions.
-- [ ] Multi-resource resource requirements, shift calendars, setup and transit times.
+- [x] Fixed simultaneous multi-resource reservations (v0.7: CNC + operator, technician + vehicle, packing station + worker).
+- [ ] Dynamic crew/resource-pool selection, shift calendars, setup and transit times.
 - [ ] Strong CP-SAT and scalable heuristic solver registry with honest time-limit metadata.
 - [ ] Real customer pilot with opt-in, permissioned data ingestion, rigorous domain validation and independent outcome measurement.
 - [ ] Hosted demo with synthetic data and a publicly verified browser smoke test.

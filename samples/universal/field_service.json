@@ -38,6 +38,15 @@
         "mechanical"
       ],
       "unavailable": []
+    },
+    {
+      "id": "SERVICE_VAN",
+      "name": "Shared service van",
+      "kind": "service_vehicle",
+      "capabilities": [
+        "transport_support"
+      ],
+      "unavailable": []
     }
   ],
   "work_orders": [
@@ -54,6 +63,9 @@
           "duration": 3,
           "requires_all": [
             "diagnostics"
+          ],
+          "reserve_resources": [
+            "SERVICE_VAN"
           ]
         },
         {
@@ -114,6 +126,9 @@
           "requires_all": [
             "diagnostics",
             "electrical"
+          ],
+          "reserve_resources": [
+            "SERVICE_VAN"
           ]
         }
       ]

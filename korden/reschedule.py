@@ -33,11 +33,12 @@ def prepare_rolling(original: dict, prior_schedule: list[dict], now: int,
     frozen = {s['key']: dict(s) for s in prior_schedule if s['start'] < now}
     outages = downtime_by_machine(revised)
     for row in frozen.values():
-        for ds, de in outages[row['machine']]:
-            if row['start'] < de and row['end'] > ds:
-                raise ValueError(
-                    f"Outage conflicts with already-started operation {row['key']} on {row['machine']}; "
-                    'non-preemptive model cannot interrupt work in progress')
+        for rid in [row['machine'], *row.get('support_resources', [])]:
+            for ds, de in outages[rid]:
+                if row['start'] < de and row['end'] > ds:
+                    raise ValueError(
+                        f"Outage conflicts with already-started operation {row['key']} on {rid}; "
+                        'non-preemptive model cannot interrupt work in progress')
     return frozen
 
 
@@ -49,7 +50,8 @@ def rolling_dispatch(data: dict, fixed: dict[str, dict], now: int,
     occupied = downtime_by_machine(data)
     schedule = list(fixed.values())
     for row in fixed.values():
-        occupied[row['machine']].append((row['start'], row['end']))
+        for rid in [row['machine'], *row.get('support_resources', [])]:
+            occupied[rid].append((row['start'], row['end']))
     for job in sorted(data['jobs'], key=lambda j: policy_priority(j, policy)):
         ready = max(now, job['release'])
         for i, op in enumerate(job['operations']):
@@ -59,14 +61,19 @@ def rolling_dispatch(data: dict, fixed: dict[str, dict], now: int,
                 continue
             options = []
             for machine in op['machines']:
-                start = earliest_slot(ready, op['duration'], occupied[machine])
+                busy = occupied[machine] + [interval for rid in op.get('support_resources', [])
+                                            for interval in occupied[rid]]
+                start = earliest_slot(ready, op['duration'], busy)
                 options.append((start + op['duration'], start, machine))
             end, start, machine = min(options)
             row = {'key': key, 'job': job['id'], 'operation': op['id'],
                    'machine': machine, 'start': int(start), 'end': int(end),
                    'duration': op['duration']}
+            if op.get('support_resources'):
+                row['support_resources'] = list(op['support_resources'])
             schedule.append(row)
-            occupied[machine].append((start, end))
+            for rid in [machine, *op.get('support_resources', [])]:
+                occupied[rid].append((start, end))
             ready = end
     schedule.sort(key=lambda r: (r['start'], r['machine'], r['key']))
     errors = check_schedule(data, schedule)

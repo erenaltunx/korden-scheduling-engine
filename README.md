@@ -4,19 +4,19 @@
 
 KORDEN is an independent, local-first **cross-industry operations research** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
-**Version:** 0.6.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+**Version:** 0.7.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
 
 ## Cross-industry resource studio (v0.6)
 
 KORDEN now supports an explicit **universal resource / capability / workflow contract**. Use the **Cross-Industry Resource Studio** in the web UI to choose a manufacturing, field-service or warehouse workflow, edit due times/priorities and block resource availability without hand-writing JSON. The sector-specific data is validated and compiled into the *same* tested MILP/HiGHS engine; all existing factory scenarios continue working.
 
-The v1 domain supports a **single exclusive resource per sequential step**, skill matching, integer minutes or hours and fixed unavailability. It intentionally rejects unknown or unsupported constraints: it does **not** solve multi-worker staffing, driving routes, inventories, setup times or complex calendars yet. This is a decision-engine foundation, **not** a complete production operations system. See [vision, actual scope and architecture](docs/VISION_AND_DOMAIN_CONTRACT.md).
+The v1 domain supports **one capability-matched primary resource plus optional fixed simultaneous supporting resources per sequential step** (for example CNC machine + operator), integer minutes or hours and fixed unavailability. It intentionally rejects unknown or unsupported constraints: it does **not** solve *automatic selection of substitute support staff*, driving routes, inventories, setup times or complex calendars yet. This is a decision-engine foundation, **not** a complete production operations system. See [vision, actual scope and architecture](docs/VISION_AND_DOMAIN_CONTRACT.md).
 
 ```bash
 python universal_benchmark.py --limit 8 --out artifacts/cross_industry
 ```
 
-The three fictional sample sectors are compared against the strongest of EDD/FIFO/SPT/WSPT for each workflow. **Results are synthetic, per-sector and in different time units**, so they are not claims about live industrial savings. See [cross-industry audit](docs/CROSS_INDUSTRY_EXPERIMENTS.md) and machine-readable outputs in `docs/benchmarks/cross_industry_v06.*`.
+The three fictional sector scenarios now reserve simultaneous support resources too. They are compared against the strongest of EDD/FIFO/SPT/WSPT for each workflow. **Results are synthetic, per-sector and in different time units**, so they are not claims about live industrial savings. See the [v0.6 historical benchmark](docs/CROSS_INDUSTRY_EXPERIMENTS.md) and current [v0.7 concurrent-resources benchmark](docs/CONCURRENT_RESOURCE_EXPERIMENTS.md). Frozen v0.6 input data is in `samples/archives/v06/`.
 
 **API endpoints:** `GET /api/universal/templates`, `GET /api/universal/templates/{id}`, `POST /api/universal/validate`, `POST /api/universal/run`. All other legacy APIs remain unchanged.
 

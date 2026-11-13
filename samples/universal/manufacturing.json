@@ -35,6 +35,20 @@
         "inspection"
       ],
       "unavailable": []
+    },
+    {
+      "id": "CNC_OPERATOR",
+      "name": "CNC qualified operator",
+      "kind": "human_operator",
+      "capabilities": [
+        "operate_cnc"
+      ],
+      "unavailable": [
+        {
+          "start": 13,
+          "end": 16
+        }
+      ]
     }
   ],
   "work_orders": [
@@ -51,6 +65,9 @@
           "duration": 6,
           "requires_all": [
             "milling"
+          ],
+          "reserve_resources": [
+            "CNC_OPERATOR"
           ]
         },
         {
@@ -76,6 +93,9 @@
           "duration": 5,
           "requires_all": [
             "milling"
+          ],
+          "reserve_resources": [
+            "CNC_OPERATOR"
           ]
         },
         {
@@ -101,6 +121,9 @@
           "duration": 7,
           "requires_all": [
             "milling"
+          ],
+          "reserve_resources": [
+            "CNC_OPERATOR"
           ]
         },
         {
@@ -126,6 +149,9 @@
           "duration": 5,
           "requires_all": [
             "milling"
+          ],
+          "reserve_resources": [
+            "CNC_OPERATOR"
           ]
         },
         {
@@ -151,6 +177,9 @@
           "duration": 8,
           "requires_all": [
             "milling"
+          ],
+          "reserve_resources": [
+            "CNC_OPERATOR"
           ]
         },
         {

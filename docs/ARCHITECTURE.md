@@ -52,3 +52,10 @@ Future shift calendars, setups and disruptions should be separate focused module
 The adapter is limited to **exactly one exclusive resource per step, sequential steps per work order**. It rejects unknown keys (including attempted capacity, simultaneous-worker, inventory or travel constraints). This is essential: a solver cannot claim feasibility for rules it did not encode. Future adapters should be separate, versioned modules and support constraint coverage reports with negative tests.
 
 The browser's guided editor only changes the canonical JSON via the API's validation endpoint. Resource-kind labels and industries never affect solver semantics; capabilities and unavailability do. See `VISION_AND_DOMAIN_CONTRACT.md` for the intended end-state and explicit non-goals.
+
+
+## v0.7 synchronized primary and support reservations
+
+A task may have `support_resources` (legacy/internal optimizer) / `reserve_resources` (universal source). The core model creates a fixed one-valued assignment for each support resource. Disjunctive non-overlap constraints apply uniformly to *primary assignments and fixed support reservations*. Heuristic baselines search the earliest slot available simultaneously across all occupied resources. The independent verifier separately checks support-resource overlap and downtime. Rolling replanning keeps all started reservations intact and refuses outages that intersect them. Existing no-support source remains backward-compatible.
+
+Support selection is still fixed by input, not combinatorial staff assignment; resource capacity is exactly one. Historical reports use archived inputs to prevent silent benchmark drift.
