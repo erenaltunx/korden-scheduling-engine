@@ -167,9 +167,9 @@ function renderResult() {
     );
   }else{
     area.replaceChildren(
-      kpi('Weighted tardiness',o.weighted_tardiness,b.weighted_tardiness,improvement===null?'Selected baseline has zero tardiness':`${improvement.toFixed(2)}% improvement vs. ${baselineName}`, o.weighted_tardiness<b.weighted_tardiness),
+      kpi('Priority-weighted delay',o.weighted_tardiness,b.weighted_tardiness,improvement===null?'No baseline delay (lower is better)':`${improvement.toFixed(2)}% less vs. ${baselineName} · lower is better`, o.weighted_tardiness<b.weighted_tardiness),
       kpi('Late customer orders',o.late_jobs,b.late_jobs,`${currentScenario.jobs.length} total orders`,o.late_jobs<b.late_jobs),
-      kpi('Makespan · '+currentTimeUnit+'s',o.makespan,b.makespan,'Final completion time',o.makespan<b.makespan),
+      kpi('Production finish · '+currentTimeUnit+'s',o.makespan,b.makespan,'Final operation completion time',o.makespan<b.makespan),
       kpi('Solve time · sec',sol.solve_seconds.toFixed(3),null,sol.optimality_proven?'Mathematical optimum proven':'Best feasible plan / time limit',false)
     );
   }
