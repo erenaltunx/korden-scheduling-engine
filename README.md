@@ -4,7 +4,7 @@
 
 KORDEN is an independent, local-first **operations research** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
-**Version:** 0.4.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+**Version:** 0.5.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
 
 ## Run with no ZIP or local installation — once published on GitHub
 
@@ -57,6 +57,24 @@ Weighted tardiness is **weighted hours, not money saved**. Results are small *sy
 Evaluated **60** additional synthetic instances (seeds 100–159; 300 orders / 900 operations) against the **best of EDD, FIFO, SPT and WSPT per instance**. The MILP plan reduced pooled weighted tardiness **404 → 238 (41.09%)**, improving 21 instances and tying 39, with optimality proven for all 60. This is a strictly tougher baseline than the initial EDD-only report and **not a real factory cost or delivery improvement**. The generator is still synthetic and narrow in scope; outside benchmark families remain future work.
 
 All per-seed results, methodology, exact commands and checksum are published in [`docs/benchmarks`](docs/benchmarks/README.md). Frontend also supports a non-destructive planned downtime what-if edit; each new scenario can be re-optimized but already executed tasks are not frozen.
+
+## v0.5 engineering milestone — beyond a scheduling demo
+
+**Two distinct objectives:** weighted job tardiness for business service levels, and makespan for classical job-shop research. The math must use the same objective as its reference benchmark. The new `/api/reschedule` freezes finished/in-progress non-preemptive work at a simulated planning clock, rejects outages that intersect ongoing tasks, and optimizes only work that has not started. The UI supports rolling replan after an initial run. Schedule stability (changed future tasks, machine switches, total start shift) is measured, **not yet an optimization objective**.
+
+**External benchmark:** JSPLIB `ft06` (36 operations): KORDEN finds **55** vs. 71 from the strongest classical rule, and proves model optimality; published optimum = 55. JSPLIB `la01` (50 operations): **666** vs. 1078 heuristic, matching the published optimum of 666 but **not proving it within 15 seconds**. These are *arbitrary benchmark time units*, not factory hours. Benchmarks in `benchmarks/jsplib/`, results under `docs/benchmarks/`.
+
+**20 rolling disruption trials:** 20 synthetic small workshops, aggregate weighted tardiness **833 → 563 (32.41%)** vs feasible rolling EDD, with 20/20 solver proofs. This is simulated research, not claimed production savings. Disruption changes many future tasks; plan stability requires future engineering improvements.
+
+Reproduce with:
+
+```bash
+python public_benchmark.py --instance ft06 --time-limit 15
+python public_benchmark.py --instance la01 --time-limit 15
+python disruption_lab.py --count 20 --start-seed 300 --time-limit 3
+```
+
+Read the [engineering case study](docs/ENGINEERING_CASE_STUDY.md) for assumptions, limitations, source attribution and results. The public demo intentionally does not solve large benchmark instances because it enforces low resource limits; use Codespaces or local CLI for external benchmarks.
 
 ## Model and limitations
 

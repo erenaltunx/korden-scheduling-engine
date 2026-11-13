@@ -1,0 +1,29 @@
+{
+  "instance": "la01",
+  "proven_known_optimum_makespan": 666,
+  "num_jobs": 10,
+  "num_operations": 50,
+  "baseline_makespans": {
+    "edd": 1078,
+    "fifo": 1078,
+    "spt": 1210,
+    "wspt": 1210
+  },
+  "best_baseline_makespan": 1078,
+  "solver_makespan": 666,
+  "gap_to_known_optimum_pct": 0.0,
+  "solver": {
+    "status": "time_limit_with_solution",
+    "solver": "SciPy MILP / HiGHS",
+    "objective": "makespan",
+    "frozen_operations": 0,
+    "solve_seconds": 15.006,
+    "model_variables": 336,
+    "model_constraints": 610,
+    "optimality_proven": false,
+    "relative_mip_gap": 0.22372372372372373
+  },
+  "proven_optimality_matches_reference": false,
+  "source": "https://github.com/tamy0612/JSPLIB/blob/master/instances/la01",
+  "warning": "Published JSP synthetic benchmark, minimizing makespan; not factory savings or tardiness performance."
+}

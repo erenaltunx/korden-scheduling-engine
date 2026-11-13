@@ -52,7 +52,8 @@ The core evidence is not a dashboard screenshot but a **reproducible numerical i
 - [ ] Add larger instances and percentile statistics.
 - [x] Export reproducible per-instance CSV and JSON summaries.
 - [ ] Add publication-ready figure generation.
-- [ ] Use a public scheduling benchmark format (e.g. JSPLib), with appropriate instance attribution and interpretation.
+- [x] Import JSPLIB FT06 and LA01 and compare makespan against published reference optima (v0.5).
+- [ ] Expand to medium/large public benchmarks with diverse difficulty and explicit solver/time caps.
 
 ## Milestone 3: factory realism (v0.4)
 
@@ -64,9 +65,12 @@ The core evidence is not a dashboard screenshot but a **reproducible numerical i
 ## Milestone 4: disruption management (v0.5)
 
 - [x] Counterfactual downtime scenario generator and web editor from time zero.
-- [ ] Rolling rescheduling that freezes started work and urgent-order insertion.
-- [ ] Penalize changes to an already committed schedule (schedule stability).
-- [ ] Stochastic evaluation across sampled disruption scenarios.
+- [x] Rolling rescheduling that freezes started operations; stop on impossible outage interruptions (v0.5).
+- [ ] Add urgent-order insertion and active-event ingestion.
+- [x] Measure schedule stability (moved operations, machine switches, shift hours) after disruption.
+- [ ] Add mathematical schedule-stability objective rather than reporting it alone.
+- [x] Deterministic 20-case disruption simulation with fixed seeds and complete trial results.
+- [ ] Monte Carlo stochastic disruption and uncertainty sensitivity.
 
 ## Milestone 5: portfolio proof (v1.0)
 

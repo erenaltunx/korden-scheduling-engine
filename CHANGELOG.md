@@ -1,3 +1,13 @@
+## v0.5.0 — Rolling-horizon scheduling and external benchmark validation (2026-11-13)
+- Real non-preemptive disruption replay: freeze operations already started; reallocate future tasks only.
+- Explicit rejection of outages interrupting in-progress operations; no hidden preemption assumption.
+- Rolling baseline and stability metrics (shift hours, reassignment, changed future operations).
+- Dual optimization objectives: weighted tardiness and makespan, with no cross-objective benchmark conflation.
+- Strict JSPLIB FT06/LA01 importer and reference optimum audit. FT06 solver-proven; LA01 reference value reached without solver proof in time budget.
+- 20 deterministic rolling disruption cases and documented limitations; CI regression added.
+- API `/api/reschedule`, public benchmark metadata and compatible browser controls; Docker includes bundled instance data.
+- Full engineering case study with reproducible commands, limitations and provenance.
+
 ## v0.4.0 — Stronger evidence and disruption what-if (2026-11-13)
 - Four deterministic classical scheduling policies (EDD, FIFO, SPT, WSPT) with identical feasibility rules.
 - Held-out seed benchmark compares solver recommendation with best of four valid heuristics, avoiding one weak comparator.

@@ -34,7 +34,7 @@ function applyOutage() {
   machine.downtime=merged.map(([a,b])=>({start:a,end:b}));
   scenario.factory_name=(scenario.factory_name||'Factory')+' | what-if outage '+mid+' '+start+'–'+end+'h';
   $('jsonEditor').value=JSON.stringify(scenario,null,2);
-  displayStats(scenario);lastResult=null;$('downloadButton').disabled=true;
+  displayStats(scenario);lastResult=null;$('downloadButton').disabled=true;$('rescheduleButton').disabled=true;
   setStatus('Outage applied to scenario; run optimization to calculate new feasible schedule.');
 }
 function displayStats(s) {
@@ -51,13 +51,15 @@ function readScenario() {
   return parsed;
 }
 async function loadScenario(name) {
-  const res=await fetch('/api/scenarios/'+encodeURIComponent(name));if(!res.ok)throw Error('Could not load scenario');
+  const isPublic=name.startsWith('public:');
+  const res=await fetch(isPublic?('/api/public-benchmarks/'+encodeURIComponent(name.slice(7))):('/api/scenarios/'+encodeURIComponent(name)));
+  $('objectiveSelect').value=isPublic?'makespan':'weighted_tardiness';if(!res.ok)throw Error('Could not load scenario');
   currentScenario=await res.json();$('jsonEditor').value=JSON.stringify(currentScenario,null,2);
   displayStats(currentScenario);lastResult=null;$('downloadButton').disabled=true;
   $('kpis').replaceChildren(e('div','Run this scenario to generate your measured benchmark.','empty-kpi'));
   $('timeline').replaceChildren();$('timeline').append(e('div','Ready to optimize.','empty-state'));
   $('experimentMeta').replaceChildren(e('div','No experiment executed.','placeholder'));
-  $('runState').textContent='Ready to run';setStatus('Ready: '+currentScenario.factory_name);
+  $('runState').textContent='Ready to run';$('rescheduleButton').disabled=true;setStatus('Ready: '+currentScenario.factory_name);
 }
 function kpi(label, value, old, detail, positive) {
   const c=e('div',undefined,'kpi');c.append(e('div',label,'kpi-label'));
@@ -71,19 +73,36 @@ function renderResult() {
   const b=lastResult.baseline.metrics,o=lastResult.optimized.metrics,sol=lastResult.solver;
   const baselineName=lastResult.baseline.name||'selected baseline';
   const improvement=lastResult.improvement_percent;
-  const area=$('kpis');area.replaceChildren(
-    kpi('Weighted tardiness',o.weighted_tardiness,b.weighted_tardiness,improvement===null?'Selected baseline has zero tardiness':`${improvement.toFixed(2)}% improvement vs. ${baselineName}`, o.weighted_tardiness<b.weighted_tardiness),
-    kpi('Late customer orders',o.late_jobs,b.late_jobs,`${currentScenario.jobs.length} total orders`,o.late_jobs<b.late_jobs),
-    kpi('Makespan · hours',o.makespan,b.makespan,'Final completion time',o.makespan<b.makespan),
-    kpi('Solve time · sec',sol.solve_seconds.toFixed(3),null,sol.optimality_proven?'Mathematical optimum proven':'Best feasible plan / time limit',false)
-  );
+  const isMakespan=lastResult.target_metric==='makespan';
+  const area=$('kpis');
+  if(isMakespan){
+    const target=currentScenario.benchmark_known_optimum_makespan;
+    area.replaceChildren(
+      kpi('Makespan · hours',o.makespan,b.makespan, improvement===null?'Baseline is zero':`${improvement.toFixed(2)}% shorter vs. ${baselineName}`,o.makespan<b.makespan),
+      kpi('Published benchmark optimum',target??'N/A',null, target===undefined?'Not a public benchmark':o.makespan===target?'Reached published value':'Reference target',false),
+      kpi('Scheduled operations',o.machine_busy_hours?Object.values(o.machine_busy_hours).reduce((a,b)=>a+b,0)+' machine-hours':'—',null,'Total processing machine-hours',false),
+      kpi('Solve time · sec',sol.solve_seconds.toFixed(3),null,sol.optimality_proven?'Mathematical optimum proven':'Feasible result; proof not obtained',false)
+    );
+  }else{
+    area.replaceChildren(
+      kpi('Weighted tardiness',o.weighted_tardiness,b.weighted_tardiness,improvement===null?'Selected baseline has zero tardiness':`${improvement.toFixed(2)}% improvement vs. ${baselineName}`, o.weighted_tardiness<b.weighted_tardiness),
+      kpi('Late customer orders',o.late_jobs,b.late_jobs,`${currentScenario.jobs.length} total orders`,o.late_jobs<b.late_jobs),
+      kpi('Makespan · hours',o.makespan,b.makespan,'Final completion time',o.makespan<b.makespan),
+      kpi('Solve time · sec',sol.solve_seconds.toFixed(3),null,sol.optimality_proven?'Mathematical optimum proven':'Best feasible plan / time limit',false)
+    );
+  }
   $('runState').textContent=sol.status.replaceAll('_',' ');
   const m=$('experimentMeta');m.replaceChildren(meta('Solver',sol.solver),meta('Solver status',sol.status),
+    meta('Objective',lastResult.target_metric || 'weighted_tardiness'),
     meta('Variables',sol.model_variables),meta('Linear constraints',sol.model_constraints),
     meta('Optimality proof',sol.optimality_proven?'Yes':'No'),
     meta('Relative optimality gap',sol.relative_mip_gap===null?'Not available':`${(100*sol.relative_mip_gap).toFixed(2)}%`),
-    meta('Storage', lastResult.persisted ? 'Saved locally · '+ lastResult.run_id : 'Public demo · not saved')); 
-  $('downloadButton').disabled=false;renderTimeline();
+    meta('Storage', lastResult.persisted ? 'Saved locally · '+ lastResult.run_id : 'Public demo · not saved'),
+    ...(lastResult.stability ? [meta('Frozen operations',lastResult.stability.frozen_operations),
+      meta('Changed remaining operations',lastResult.stability.rescheduled_operations),
+      meta('Machine reassignments',lastResult.stability.machine_reassignments),
+      meta('Start-time shift (hours)',lastResult.stability.total_absolute_start_shift_hours)] : [])); 
+  $('downloadButton').disabled=false;$('rescheduleButton').disabled=false;renderTimeline();
 }
 function renderTimeline() {
   if(!lastResult||!currentScenario)return;
@@ -119,12 +138,36 @@ async function run(){
   currentScenario=scenario;displayStats(scenario);const btn=$('runButton');btn.disabled=true;btn.textContent='Optimizing production…';
   $('runState').textContent='Solving';setStatus('Computing feasible schedule and MILP optimality…');
   try {
-    const response=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time,baseline_policy:$('baselinePolicy').value})});
+    const response=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time,baseline_policy:$('baselinePolicy').value,objective:$('objectiveSelect').value})});
     const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Server error');
     lastResult=data;setTab('optimized');renderResult();await refreshHistory();setStatus('Completed and validated. '+(data.persisted?'Saved to your local experiment history. ': 'Public demo, export results to keep them. ')+data.note);
   }catch(err){$('runState').textContent='Error';setStatus('Cannot run: '+err.message,true)}
   finally{btn.disabled=false;btn.innerHTML='<span class="run-icon">▶</span> Run optimization'}
 }
+
+async function rollingReplan() {
+  if(!lastResult || !currentScenario){setStatus('Run an optimization first to establish a committed schedule.',true);return}
+  const now=Number($('rescheduleNow').value), start=Number($('outageStart').value),end=Number($('outageEnd').value);
+  const mid=$('outageMachine').value, time=Number($('limitInput').value);
+  if(!Number.isInteger(now)||now<0||now>10000||!Number.isInteger(start)||!Number.isInteger(end)||start<now||end<=start){
+    setStatus('Outage must begin at or after a valid current hour, and end after it starts.',true);return;
+  }
+  if(!Number.isFinite(time)||time<0.5||time>maxSolverSeconds){setStatus('Invalid solver time limit.',true);return}
+  const button=$('rescheduleButton');button.disabled=true;
+  setStatus('Freezing already-started operations and optimizing remaining work…');
+  try{
+    const request={scenario:currentScenario,prior_schedule:lastResult.optimized.schedule,
+      now,machine_id:mid,outage_start:start,outage_end:end,time_limit:time,
+      baseline_policy:$('baselinePolicy').value,objective:$('objectiveSelect').value};
+    const resp=await fetch('/api/reschedule',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)});
+    const data=await resp.json();if(!resp.ok)throw Error(typeof data.detail==='string'?data.detail:'Server error');
+    currentScenario=data.revised_scenario;$('jsonEditor').value=JSON.stringify(currentScenario,null,2);
+    lastResult=data;displayStats(currentScenario);setTab('optimized');renderResult();await refreshHistory();
+    setStatus(`Rolling schedule validated. ${data.stability.frozen_operations} operations frozen; ${data.stability.rescheduled_operations} future operations changed.`);
+  } catch(error){setStatus('Rescheduling refused: '+error.message,true)}
+  finally{button.disabled=!lastResult}
+}
+
 function downloadResult(){if(!lastResult)return;const b=new Blob([JSON.stringify({scenario:currentScenario,experiment:lastResult},null,2)],{type:'application/json'});
   const link=document.createElement('a');link.href=URL.createObjectURL(b);link.download='korden_experiment_'+new Date().toISOString().slice(0,10)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}
 async function refreshHistory(){
@@ -163,6 +206,7 @@ async function boot(){
     }
   } catch (error) { /* Local fallback retains documented 60-second cap. */ }
   $('applyOutage').addEventListener('click',applyOutage);
+  $('rescheduleButton').addEventListener('click',rollingReplan);
   $('runButton').addEventListener('click',run);$('tabOptimized').addEventListener('click',()=>setTab('optimized'));
   $('tabBaseline').addEventListener('click',()=>setTab('baseline'));$('downloadButton').addEventListener('click',downloadResult);
   $('toggleEditor').addEventListener('click',()=>{$('editorPanel').hidden=!$('editorPanel').hidden});
@@ -170,6 +214,12 @@ async function boot(){
   try{const resp=await fetch('/api/scenarios');if(!resp.ok)throw Error('Could not load scenarios');
     const scenarios=await resp.json();const selector=$('scenarioSelect');selector.replaceChildren();
     for(const s of scenarios){const opt=e('option',s.name);opt.value=s.id;selector.append(opt)}
+    if(!$('historyPanel').hidden){
+      const publicResp=await fetch('/api/public-benchmarks');
+      if(publicResp.ok){for(const s of await publicResp.json()){
+        const opt=e('option',s.name);opt.value='public:'+s.id;selector.append(opt);
+      }}
+    }
     const chosen=scenarios.find(x=>x.id==='assembly_cell')||scenarios[0];if(chosen){selector.value=chosen.id;await loadScenario(chosen.id)}
   }catch(err){setStatus(err.message,true)}
   await refreshHistory();

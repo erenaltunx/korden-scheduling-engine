@@ -12,16 +12,21 @@
 <div class="app-layout">
   <aside class="sidebar">
     <div class="brand"><span class="brand-symbol">K</span><div><div class="brand-title">KORDEN<span class="brand-dot">.</span></div><div class="brand-sub">OPERATIONS RESEARCH LAB</div></div></div>
-    <div class="sidebar-intro">Scenario control <span class="version">v0.4</span></div>
+    <div class="sidebar-intro">Scenario control <span class="version">v0.5</span></div>
     <div class="control-group">
       <label for="scenarioSelect">Factory scenario</label>
       <select id="scenarioSelect"><option>Loading…</option></select>
-      <p class="help">Edit the source data or switch between two reproducible examples.</p>
+      <p class="help">Select a workshop or a public research benchmark (locally; big benchmarks are disabled on the public demo).</p>
     </div>
     <div class="control-group">
       <label for="limitInput">Solver time limit <span class="subdued">seconds</span></label>
       <input id="limitInput" type="number" min="0.5" max="60" step="0.5" value="8" />
       <p class="help">HiGHS searches for the best feasible schedule and may prove optimality.</p>
+    </div>
+    <div class="control-group">
+      <label for="objectiveSelect">Optimization target</label>
+      <select id="objectiveSelect"><option value="weighted_tardiness">Weighted order tardiness</option><option value="makespan">Total production completion (makespan)</option></select>
+      <p class="help">Public JSPLib benchmarks use makespan, not tardiness. Never compare different objectives.</p>
     </div>
     <div class="control-group">
       <label for="baselinePolicy">Benchmark baseline</label>
@@ -37,6 +42,10 @@
       </div>
       <button class="secondary-button" type="button" id="applyOutage">Apply outage to editable scenario</button>
       <p class="help">Counterfactual replanning from hour zero; not live shop-floor dispatch.</p>
+      <label for="rescheduleNow">Rolling replan — current factory hour</label>
+      <input id="rescheduleNow" type="number" min="0" max="10000" step="1" value="2" />
+      <button class="secondary-button" type="button" id="rescheduleButton" disabled>Replan remaining work (freeze started tasks)</button>
+      <p class="help">Run a normal optimization first, then simulate an outage with the current plan frozen before the chosen hour.</p>
     </div>
     <section class="scenario-stats" id="scenarioStats"><div class="mini-loading">Loading sample…</div></section>
     <button class="run-button" id="runButton" type="button"><span class="run-icon">▶</span> Run optimization</button>
@@ -62,7 +71,7 @@
         <section class="workspace-panel compact"><h2>Experiment metadata</h2><div id="experimentMeta" class="experiment-list"><div class="placeholder">No experiment executed.</div></div><div id="historyPanel"><h2 class="history-heading">Saved experiment history</h2><div id="savedHistory" class="experiment-list"><div class="placeholder">Loading saved experiments…</div></div></div></section>
         <section class="workspace-panel compact"><h2>Research integrity</h2><div class="research-note">Measured improvements apply <strong>only to the selected scenario and baseline</strong>. A solver's optimal result refers to the mathematical model, not to real-world savings. Results must be validated before CV use.</div><button id="downloadButton" class="download-button" disabled>Export full experiment JSON ↓</button></section>
       </div>
-      <footer>KORDEN / v0.4 · Advanced Production Scheduling &amp; Optimization · Independent engineering project</footer>
+      <footer>KORDEN / v0.5 · Advanced Production Scheduling &amp; Optimization · Independent engineering project</footer>
     </div>
   </main>
 </div>
