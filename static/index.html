@@ -12,7 +12,7 @@
 <div class="app-layout">
   <aside class="sidebar">
     <div class="brand"><span class="brand-symbol">O</span><div><div class="brand-title">OPTERA<span class="brand-dot">.</span></div><div class="brand-sub">PRODUCTION SCHEDULING</div></div></div>
-    <div class="sidebar-intro">Scenario control <span class="version">v0.9</span></div>
+    <div class="sidebar-intro">Scenario control <span class="version">v0.14</span></div>
     <div class="control-group">
       <label for="scenarioSelect">Choose a workflow</label>
       <select id="scenarioSelect"><option>Loading…</option></select>
@@ -47,6 +47,13 @@
       </div>
       <button class="secondary-button" type="button" id="applyOutage">Apply outage to editable scenario</button>
       <p class="help">Legacy factory-mode counterfactual. Use the sector studio below for universal workflows.</p>
+      <label for="shiftStart">Machine permitted working period</label>
+      <div class="outage-time-row">
+        <label>From (h)<input id="shiftStart" type="number" min="0" max="9999" step="1" value="8" /></label>
+        <label>Until (h)<input id="shiftEnd" type="number" min="1" max="10000" step="1" value="16" /></label>
+      </div>
+      <button class="secondary-button" id="applyShift" type="button">Add working period</button>
+      <p class="help">Machine is closed outside explicitly listed hours. Repeat for additional periods; these are absolute hours, not recurring daily shifts.</p>
       <label for="rescheduleNow">Rolling replan — current planning time</label>
       <input id="rescheduleNow" type="number" min="0" max="10000" step="1" value="2" />
       <button class="secondary-button" type="button" id="rescheduleButton" disabled>Replan remaining work (freeze started tasks)</button>
@@ -127,7 +134,7 @@
         <section class="workspace-panel compact"><h2>Experiment metadata</h2><div id="experimentMeta" class="experiment-list"><div class="placeholder">No experiment executed.</div></div><div id="historyPanel"><h2 class="history-heading">Saved experiment history</h2><div id="savedHistory" class="experiment-list"><div class="placeholder">Loading saved experiments…</div></div></div></section>
         <section class="workspace-panel compact"><h2>Research integrity</h2><div class="research-note">Measured improvements apply <strong>only to the selected scenario and baseline</strong>. A solver's optimal result refers to the mathematical model, not to real-world savings. Results must be validated before CV use.</div><button id="downloadButton" class="download-button" disabled>Export full experiment JSON ↓</button><button id="exportBiButton" class="download-button" disabled>Export Power BI-ready CSV tables ↓</button></section>
       </div>
-      <footer>OPTERA / v0.9 · Finite-Capacity Production Scheduling &amp; Recovery · Independent engineering project</footer>
+      <footer>OPTERA / v0.14 · Finite-Capacity Production Scheduling &amp; Recovery · Independent engineering project</footer>
     </div>
   </main>
 </div>
