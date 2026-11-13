@@ -2,9 +2,22 @@
 
 **Plan smarter. Produce better.**
 
-OPTERA is an independent, local-first **cross-industry operations research** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
+OPTERA is an independent, local-first **finite-capacity manufacturing scheduling** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
 **Version:** 0.9.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+
+
+## v0.10 — Harder, more honest manufacturing evidence
+
+**Independent paired research** across 70 deterministic synthetic workshop scenarios (462 orders; 807 operations): 20 single CNC, 20 two-stage, 20 flexible CNC and 10 congested CNC workcells. The guarded recommendation policy (validated MILP candidate or validated classical fallback) reduced aggregate weighted tardiness **3564 → 2968 (16.72%)**, with **60/70 proven optima**. In the **10 congested shops**, improvement was only **1.25%**, with **no proven optima** under the 0.7-second solver budget; 8 cases required retaining the classical baseline.
+
+This is a deliberately more difficult test than our earlier 28.13% single-machine study, **not a real factory savings claim or a pure MILP-only gain**. Run:
+
+~~~bash
+python research_lab.py --count-per-profile 20 --stress-count 10 --seed-base 230011 --time-limit 0.7 --out artifacts/heterogeneous_workshops
+~~~
+
+See [research evidence and caveats](docs/ENGINEERING_EVIDENCE_V1.md). Detailed CSV/JSON are produced on demand; GitHub CI also uploads a smaller fixed-seed smoke report.
 
 ## Product focus: high-mix, low-volume production cells
 
