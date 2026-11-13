@@ -1,0 +1,209 @@
+{
+  "factory_name": "Precision Workshop — 6 Customer Orders",
+  "machines": [
+    {
+      "id": "CUT-1",
+      "downtime": []
+    },
+    {
+      "id": "CNC-1",
+      "downtime": [
+        {
+          "start": 12,
+          "end": 16
+        }
+      ]
+    },
+    {
+      "id": "CNC-2",
+      "downtime": []
+    },
+    {
+      "id": "PACK-1",
+      "downtime": []
+    }
+  ],
+  "jobs": [
+    {
+      "id": "ORD-101",
+      "release": 0,
+      "due": 22,
+      "weight": 1,
+      "operations": [
+        {
+          "id": "Cut",
+          "duration": 6,
+          "machines": [
+            "CUT-1"
+          ]
+        },
+        {
+          "id": "Mill",
+          "duration": 8,
+          "machines": [
+            "CNC-1",
+            "CNC-2"
+          ]
+        },
+        {
+          "id": "Pack",
+          "duration": 2,
+          "machines": [
+            "PACK-1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ORD-102",
+      "release": 0,
+      "due": 17,
+      "weight": 4,
+      "operations": [
+        {
+          "id": "Cut",
+          "duration": 4,
+          "machines": [
+            "CUT-1"
+          ]
+        },
+        {
+          "id": "Mill",
+          "duration": 4,
+          "machines": [
+            "CNC-1",
+            "CNC-2"
+          ]
+        },
+        {
+          "id": "Pack",
+          "duration": 2,
+          "machines": [
+            "PACK-1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ORD-103",
+      "release": 0,
+      "due": 25,
+      "weight": 2,
+      "operations": [
+        {
+          "id": "Cut",
+          "duration": 7,
+          "machines": [
+            "CUT-1"
+          ]
+        },
+        {
+          "id": "Mill",
+          "duration": 3,
+          "machines": [
+            "CNC-1",
+            "CNC-2"
+          ]
+        },
+        {
+          "id": "Pack",
+          "duration": 2,
+          "machines": [
+            "PACK-1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ORD-104",
+      "release": 3,
+      "due": 29,
+      "weight": 3,
+      "operations": [
+        {
+          "id": "Cut",
+          "duration": 5,
+          "machines": [
+            "CUT-1"
+          ]
+        },
+        {
+          "id": "Mill",
+          "duration": 7,
+          "machines": [
+            "CNC-1",
+            "CNC-2"
+          ]
+        },
+        {
+          "id": "Pack",
+          "duration": 1,
+          "machines": [
+            "PACK-1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ORD-105",
+      "release": 0,
+      "due": 21,
+      "weight": 5,
+      "operations": [
+        {
+          "id": "Cut",
+          "duration": 2,
+          "machines": [
+            "CUT-1"
+          ]
+        },
+        {
+          "id": "Mill",
+          "duration": 5,
+          "machines": [
+            "CNC-1",
+            "CNC-2"
+          ]
+        },
+        {
+          "id": "Pack",
+          "duration": 2,
+          "machines": [
+            "PACK-1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ORD-106",
+      "release": 6,
+      "due": 32,
+      "weight": 1,
+      "operations": [
+        {
+          "id": "Cut",
+          "duration": 8,
+          "machines": [
+            "CUT-1"
+          ]
+        },
+        {
+          "id": "Mill",
+          "duration": 4,
+          "machines": [
+            "CNC-1",
+            "CNC-2"
+          ]
+        },
+        {
+          "id": "Pack",
+          "duration": 1,
+          "machines": [
+            "PACK-1"
+          ]
+        }
+      ]
+    }
+  ],
+  "schema_version": 1
+}

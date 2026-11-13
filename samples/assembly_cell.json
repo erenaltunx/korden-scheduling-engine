@@ -1,0 +1,142 @@
+{
+  "factory_name": "Assembly Cell — 5 Custom Components",
+  "machines": [
+    {
+      "id": "LATHE",
+      "downtime": [
+        {
+          "start": 11,
+          "end": 14
+        }
+      ]
+    },
+    {
+      "id": "DRILL",
+      "downtime": []
+    },
+    {
+      "id": "FINISH",
+      "downtime": []
+    }
+  ],
+  "jobs": [
+    {
+      "id": "A",
+      "release": 0,
+      "due": 15,
+      "weight": 1,
+      "operations": [
+        {
+          "id": "Turning",
+          "duration": 6,
+          "machines": [
+            "LATHE"
+          ]
+        },
+        {
+          "id": "Finishing",
+          "duration": 4,
+          "machines": [
+            "FINISH"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "release": 0,
+      "due": 12,
+      "weight": 3,
+      "operations": [
+        {
+          "id": "Drilling",
+          "duration": 3,
+          "machines": [
+            "DRILL"
+          ]
+        },
+        {
+          "id": "Turning",
+          "duration": 5,
+          "machines": [
+            "LATHE"
+          ]
+        },
+        {
+          "id": "Finishing",
+          "duration": 2,
+          "machines": [
+            "FINISH"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "release": 0,
+      "due": 19,
+      "weight": 2,
+      "operations": [
+        {
+          "id": "Turning",
+          "duration": 4,
+          "machines": [
+            "LATHE"
+          ]
+        },
+        {
+          "id": "Drilling",
+          "duration": 5,
+          "machines": [
+            "DRILL"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "release": 3,
+      "due": 20,
+      "weight": 5,
+      "operations": [
+        {
+          "id": "Drilling",
+          "duration": 5,
+          "machines": [
+            "DRILL"
+          ]
+        },
+        {
+          "id": "Finishing",
+          "duration": 3,
+          "machines": [
+            "FINISH"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "release": 0,
+      "due": 23,
+      "weight": 1,
+      "operations": [
+        {
+          "id": "Turning",
+          "duration": 7,
+          "machines": [
+            "LATHE"
+          ]
+        },
+        {
+          "id": "Finishing",
+          "duration": 2,
+          "machines": [
+            "FINISH"
+          ]
+        }
+      ]
+    }
+  ],
+  "schema_version": 1
+}

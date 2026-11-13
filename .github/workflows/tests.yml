@@ -1,0 +1,88 @@
+name: KORDEN Quality Gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Unit, API, recovery / Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.12', '3.13']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pip check
+      - run: python -m pytest -q
+        env:
+          KORDEN_DATA_DIR: ${{ runner.temp }}/korden-test-data
+      - run: python -m compileall -q korden
+      - name: Verify brand cleanup
+        run: |
+          old_name=$(printf '%s%s' 'FOR' 'GE')
+          if git grep -ni -e "$old_name" -e "$(printf '%s' "$old_name" | tr '[:upper:]' '[:lower:]')" -- .; then
+            echo 'Legacy product name found.'; exit 1
+          fi
+
+  windows-smoke:
+    name: Windows runtime compatibility
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pip check
+      - run: python -m pytest -q
+        env:
+          KORDEN_DATA_DIR: ${{ runner.temp }}/korden-test-data
+      - run: python -m compileall -q korden
+
+  reproducible-benchmark:
+    name: Reproducible scheduling benchmark
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python benchmark_suite.py --count 10 --jobs 5 --time-limit 4 --out artifacts/ci_suite
+      - uses: actions/upload-artifact@v4
+        with:
+          name: korden-ci-benchmark
+          path: artifacts/ci_suite.*
+
+  container-smoke:
+    name: Docker build and health probe
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t korden-ci .
+      - run: docker run -d --name korden-smoke -p 127.0.0.1:8000:8000 korden-ci
+      - name: Health and UI smoke check
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/api/health; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:8000/api/health | grep -q KORDEN
+          curl -fsS http://127.0.0.1:8000/ | grep -q KORDEN
+      - if: always()
+        run: docker logs korden-smoke || true

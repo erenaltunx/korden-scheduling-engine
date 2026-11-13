@@ -1,0 +1,14 @@
+.git
+__pycache__
+.pytest_cache
+.venv
+*.pyc
+*.sqlite*
+*.db*
+*.env
+.env*
+results
+artifacts
+backups
+*.zip
+*.bundle

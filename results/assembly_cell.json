@@ -1,0 +1,258 @@
+{
+  "factory": "Assembly Cell \u2014 5 Custom Components",
+  "baseline": {
+    "name": "Earliest Due Date (EDD)",
+    "metrics": {
+      "weighted_tardiness": 39,
+      "total_tardiness": 29,
+      "late_jobs": 3,
+      "makespan": 33,
+      "machine_busy_hours": {
+        "LATHE": 22,
+        "DRILL": 13,
+        "FINISH": 11
+      },
+      "job_completion_hours": {
+        "A": 24,
+        "B": 10,
+        "C": 29,
+        "D": 13,
+        "E": 33
+      }
+    },
+    "schedule": [
+      {
+        "key": "B::0",
+        "job": "B",
+        "operation": "Drilling",
+        "machine": "DRILL",
+        "start": 0,
+        "end": 3,
+        "duration": 3
+      },
+      {
+        "key": "D::0",
+        "job": "D",
+        "operation": "Drilling",
+        "machine": "DRILL",
+        "start": 3,
+        "end": 8,
+        "duration": 5
+      },
+      {
+        "key": "B::1",
+        "job": "B",
+        "operation": "Turning",
+        "machine": "LATHE",
+        "start": 3,
+        "end": 8,
+        "duration": 5
+      },
+      {
+        "key": "B::2",
+        "job": "B",
+        "operation": "Finishing",
+        "machine": "FINISH",
+        "start": 8,
+        "end": 10,
+        "duration": 2
+      },
+      {
+        "key": "D::1",
+        "job": "D",
+        "operation": "Finishing",
+        "machine": "FINISH",
+        "start": 10,
+        "end": 13,
+        "duration": 3
+      },
+      {
+        "key": "A::0",
+        "job": "A",
+        "operation": "Turning",
+        "machine": "LATHE",
+        "start": 14,
+        "end": 20,
+        "duration": 6
+      },
+      {
+        "key": "A::1",
+        "job": "A",
+        "operation": "Finishing",
+        "machine": "FINISH",
+        "start": 20,
+        "end": 24,
+        "duration": 4
+      },
+      {
+        "key": "C::0",
+        "job": "C",
+        "operation": "Turning",
+        "machine": "LATHE",
+        "start": 20,
+        "end": 24,
+        "duration": 4
+      },
+      {
+        "key": "C::1",
+        "job": "C",
+        "operation": "Drilling",
+        "machine": "DRILL",
+        "start": 24,
+        "end": 29,
+        "duration": 5
+      },
+      {
+        "key": "E::0",
+        "job": "E",
+        "operation": "Turning",
+        "machine": "LATHE",
+        "start": 24,
+        "end": 31,
+        "duration": 7
+      },
+      {
+        "key": "E::1",
+        "job": "E",
+        "operation": "Finishing",
+        "machine": "FINISH",
+        "start": 31,
+        "end": 33,
+        "duration": 2
+      }
+    ]
+  },
+  "optimized": {
+    "name": "MILP / HiGHS",
+    "metrics": {
+      "weighted_tardiness": 15,
+      "total_tardiness": 9,
+      "late_jobs": 3,
+      "makespan": 27,
+      "machine_busy_hours": {
+        "LATHE": 22,
+        "DRILL": 13,
+        "FINISH": 11
+      },
+      "job_completion_hours": {
+        "A": 10,
+        "B": 13,
+        "C": 23,
+        "D": 16,
+        "E": 27
+      }
+    },
+    "schedule": [
+      {
+        "key": "B::0",
+        "job": "B",
+        "operation": "Drilling",
+        "machine": "DRILL",
+        "start": 0,
+        "end": 3,
+        "duration": 3
+      },
+      {
+        "key": "A::0",
+        "job": "A",
+        "operation": "Turning",
+        "machine": "LATHE",
+        "start": 0,
+        "end": 6,
+        "duration": 6
+      },
+      {
+        "key": "D::0",
+        "job": "D",
+        "operation": "Drilling",
+        "machine": "DRILL",
+        "start": 3,
+        "end": 8,
+        "duration": 5
+      },
+      {
+        "key": "A::1",
+        "job": "A",
+        "operation": "Finishing",
+        "machine": "FINISH",
+        "start": 6,
+        "end": 10,
+        "duration": 4
+      },
+      {
+        "key": "B::1",
+        "job": "B",
+        "operation": "Turning",
+        "machine": "LATHE",
+        "start": 6,
+        "end": 11,
+        "duration": 5
+      },
+      {
+        "key": "B::2",
+        "job": "B",
+        "operation": "Finishing",
+        "machine": "FINISH",
+        "start": 11,
+        "end": 13,
+        "duration": 2
+      },
+      {
+        "key": "D::1",
+        "job": "D",
+        "operation": "Finishing",
+        "machine": "FINISH",
+        "start": 13,
+        "end": 16,
+        "duration": 3
+      },
+      {
+        "key": "C::0",
+        "job": "C",
+        "operation": "Turning",
+        "machine": "LATHE",
+        "start": 14,
+        "end": 18,
+        "duration": 4
+      },
+      {
+        "key": "C::1",
+        "job": "C",
+        "operation": "Drilling",
+        "machine": "DRILL",
+        "start": 18,
+        "end": 23,
+        "duration": 5
+      },
+      {
+        "key": "E::0",
+        "job": "E",
+        "operation": "Turning",
+        "machine": "LATHE",
+        "start": 18,
+        "end": 25,
+        "duration": 7
+      },
+      {
+        "key": "E::1",
+        "job": "E",
+        "operation": "Finishing",
+        "machine": "FINISH",
+        "start": 25,
+        "end": 27,
+        "duration": 2
+      }
+    ]
+  },
+  "improvement_percent": 61.54,
+  "solver": {
+    "status": "optimal",
+    "solver": "SciPy MILP / HiGHS",
+    "solve_seconds": 0.025,
+    "model_variables": 47,
+    "model_constraints": 76,
+    "optimality_proven": true,
+    "relative_mip_gap": 0.0
+  },
+  "note": "Benchmark on scenario input; not verified real-world savings."
+}

@@ -1,0 +1,14 @@
+services:
+  korden:
+    build: .
+    ports:
+      - "127.0.0.1:8000:8000"  # local only by default
+    environment:
+      KORDEN_PUBLIC_DEMO: "0"
+      KORDEN_DATA_DIR: /data
+    volumes:
+      - korden-data:/data
+    restart: unless-stopped
+    init: true
+volumes:
+  korden-data:

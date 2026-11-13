@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="KORDEN — Operations research production scheduling and measurable optimization." />
+  <title>KORDEN | Production Scheduling Lab</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+<div class="app-layout">
+  <aside class="sidebar">
+    <div class="brand"><span class="brand-symbol">K</span><div><div class="brand-title">KORDEN<span class="brand-dot">.</span></div><div class="brand-sub">OPERATIONS RESEARCH LAB</div></div></div>
+    <div class="sidebar-intro">Scenario control <span class="version">v0.3</span></div>
+    <div class="control-group">
+      <label for="scenarioSelect">Factory scenario</label>
+      <select id="scenarioSelect"><option>Loading…</option></select>
+      <p class="help">Edit the source data or switch between two reproducible examples.</p>
+    </div>
+    <div class="control-group">
+      <label for="limitInput">Solver time limit <span class="subdued">seconds</span></label>
+      <input id="limitInput" type="number" min="0.5" max="60" step="0.5" value="8" />
+      <p class="help">HiGHS searches for the best feasible schedule and may prove optimality.</p>
+    </div>
+    <section class="scenario-stats" id="scenarioStats"><div class="mini-loading">Loading sample…</div></section>
+    <button class="run-button" id="runButton" type="button"><span class="run-icon">▶</span> Run optimization</button>
+    <button class="secondary-button" id="toggleEditor" type="button">Edit scenario JSON <span>⌄</span></button>
+    <div id="editorPanel" class="editor-panel" hidden><label for="jsonEditor">Scenario definition</label><textarea id="jsonEditor" spellcheck="false"></textarea><div class="editor-hint">Valid JSON · integer hours · machines, jobs, operations</div></div>
+    <div class="sidebar-footnote">Local-first optimization. No credentials, LLM API keys or cloud services required.</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar"><div class="path"><span>Workbench</span><span class="slash">/</span><strong>Production Scheduling</strong></div><div class="tag"><span class="tag-dot"></span> LOCAL ENGINE</div></header>
+    <div class="content">
+      <div class="hero"><div class="hero-eyebrow">ENGINEERING DECISION INTELLIGENCE</div><h1>From constraints<br />to <span>competitive advantage.</span></h1><p>Model your manufacturing operation, benchmark a conventional dispatching policy, and find a mathematically optimized production schedule.</p></div>
+      <div class="section-title"><div><h2>Performance benchmark</h2><p>EDD baseline vs. mixed-integer linear programming</p></div><div class="run-state" id="runState">Ready to run</div></div>
+      <div class="kpis" id="kpis"><div class="empty-kpi">Run a scenario to generate your first measured benchmark.</div></div>
+      <div class="status-line" id="statusLine" role="status" aria-live="polite">Waiting for your first run.</div>
+
+      <div class="workspace-panel">
+        <div class="workspace-head"><div><h2>Production timeline</h2><p>Machine-level allocation, task precedence and maintenance windows</p></div><div class="tab-group"><button class="tab active" id="tabOptimized" type="button">Optimized</button><button class="tab" id="tabBaseline" type="button">EDD baseline</button></div></div>
+        <div id="timeline" class="timeline"><div class="empty-state"><span class="empty-icon">▤</span><h3>No schedule yet</h3><p>Run the model to compare feasible plans across machines and production orders.</p></div></div>
+        <div id="chartLegend" class="legend"></div>
+      </div>
+      <div class="bottom-panels">
+        <section class="workspace-panel compact"><h2>Experiment metadata</h2><div id="experimentMeta" class="experiment-list"><div class="placeholder">No experiment executed.</div></div><div id="historyPanel"><h2 class="history-heading">Saved experiment history</h2><div id="savedHistory" class="experiment-list"><div class="placeholder">Loading saved experiments…</div></div></div></section>
+        <section class="workspace-panel compact"><h2>Research integrity</h2><div class="research-note">Measured improvements apply <strong>only to the selected scenario and baseline</strong>. A solver's optimal result refers to the mathematical model, not to real-world savings. Results must be validated before CV use.</div><button id="downloadButton" class="download-button" disabled>Export full experiment JSON ↓</button></section>
+      </div>
+      <footer>KORDEN / v0.3 · Advanced Production Scheduling &amp; Optimization · Independent engineering project</footer>
+    </div>
+  </main>
+</div>
+</body>
+</html>
