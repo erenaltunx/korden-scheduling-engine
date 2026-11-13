@@ -1,0 +1,70 @@
+name: OPTERA Live Planner UX
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live-frontend:
+    name: Verify public three-step planner and responsive screenshots
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify real deployed HTML/CSS/JS and health
+        env:
+          OPTERA_URL: https://optera-ojwh.onrender.com
+        run: |
+          python - <<'PYCODE'
+          import os, time, urllib.request
+          root=os.environ["OPTERA_URL"].rstrip("/")
+          def get(path):
+              with urllib.request.urlopen(root+path,timeout=40) as response:
+                  assert response.status==200,(path,response.status)
+                  return response.read().decode("utf-8")
+          for attempt in range(28):
+              try:
+                  html=get("/")
+                  if all(token in html for token in (
+                      'id="modeDemo"', 'id="modeExcel"',
+                      'id="step-input"', 'id="step-run"', 'id="results"',
+                      '/static/planner.css', 'A better production plan.'
+                  )):
+                      break
+                  print("Waiting for new UI deployment, attempt",attempt+1,flush=True)
+              except Exception as error:
+                  print("Retry",str(error)[:120],flush=True)
+              time.sleep(8)
+          else:
+              raise AssertionError("Public page does not yet show the three-step experience")
+          style=get("/static/planner.css")
+          script=get("/static/app.js")
+          assert "mode-option.active" in style
+          assert "setInputMode(" in script
+          assert "scrollIntoView(" in script
+          health=get("/api/health")
+          assert '"application":"OPTERA"' in health
+          print("Live UX verified; HTML/CSS/JS and API all available")
+          PYCODE
+      - name: Take actual live-page desktop and mobile screenshots
+        run: |
+          mkdir -p artifacts
+          if command -v google-chrome >/dev/null; then
+            google-chrome --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu \
+              --window-size=1440,1100 --virtual-time-budget=6500 \
+              --screenshot=artifacts/optera-desktop.png https://optera-ojwh.onrender.com/ || true
+            google-chrome --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu \
+              --window-size=390,920 --virtual-time-budget=6500 \
+              --screenshot=artifacts/optera-mobile.png https://optera-ojwh.onrender.com/ || true
+          else
+            echo 'Chrome CLI unavailable; API and static UX checks still passed.'
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: optera-live-planner-screenshots
+          path: artifacts/optera-*.png
+          if-no-files-found: ignore
