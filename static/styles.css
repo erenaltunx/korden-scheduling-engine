@@ -28,3 +28,6 @@
 
 /* Concurrent resource reservations are visually distinguishable from primary allocations. */
 .task-bar.support-task{border:2px dashed #faf1d1;opacity:.82;filter:saturate(.7)}
+
+/* v0.14: closed working periods are shaded separately from maintenance. */
+.closed-shift-bar{position:absolute;top:5px;height:43px;background:repeating-linear-gradient(90deg,#33405480,#33405480 4px,#23314477 4px,#23314477 8px);border:1px solid #51667c88;border-radius:3px;pointer-events:none}
