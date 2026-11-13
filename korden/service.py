@@ -1,13 +1,14 @@
 """One benchmark pipeline shared by CLI, API and tests."""
-from .baseline import dispatch_edd
+from .baseline import POLICIES, dispatch
 from .evaluation import evaluate, check_schedule
 from .model import validate_scenario
 from .engines import optimize_with
 
 
-def compare(data: dict, time_limit: float = 8.0, engine: str = "milp_highs") -> dict:
+def compare(data: dict, time_limit: float = 8.0, engine: str = "milp_highs",
+            baseline_policy: str = "edd") -> dict:
     validate_scenario(data)
-    baseline = dispatch_edd(data)
+    baseline = dispatch(data, baseline_policy)
     before = evaluate(data, baseline)
     solution = optimize_with(engine, data, time_limit)
     after_schedule = solution["schedule"]
@@ -30,7 +31,8 @@ def compare(data: dict, time_limit: float = 8.0, engine: str = "milp_highs") -> 
         gain = round(100 * (before["weighted_tardiness"] - after["weighted_tardiness"])
                      / before["weighted_tardiness"], 2)
     return {"schema_version": 1, "engine": engine, "factory": data.get("factory_name", "Untitled factory"),
-            "baseline": {"name": "Earliest Due Date (EDD)", "metrics": before, "schedule": baseline},
+            "baseline_policy": baseline_policy,
+            "baseline": {"name": POLICIES[baseline_policy], "metrics": before, "schedule": baseline},
             "optimized": {"name": "MILP / HiGHS", "metrics": after, "schedule": after_schedule},
             "improvement_percent": gain, "solver": solution["solver"],
             "note": "Benchmark on scenario input; not verified real-world savings."}

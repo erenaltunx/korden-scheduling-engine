@@ -1,3 +1,10 @@
+## v0.4.0 — Stronger evidence and disruption what-if (2026-11-13)
+- Four deterministic classical scheduling policies (EDD, FIFO, SPT, WSPT) with identical feasibility rules.
+- Held-out seed benchmark compares solver recommendation with best of four valid heuristics, avoiding one weak comparator.
+- Non-destructive machine outage counterfactual editor; clear limitation about not freezing already executed tasks.
+- New API/UI policy input, regression tests, and GitHub Actions benchmark-artifact job.
+- CI concurrency control and research methodology with documented limitations.
+
 # Changelog
 
 ## v0.3.0 — KORDEN architecture & data-safety baseline (2026-11-13)

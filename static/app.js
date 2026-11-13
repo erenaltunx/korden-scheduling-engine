@@ -12,7 +12,33 @@ function e(tag, text, cls) {
 function setStatus(msg, error=false) {
   $('statusLine').textContent = msg; $('statusLine').style.color = error ? '#f5a2a2' : '#8997b1';
 }
+function refreshMachineOptions(s) {
+  const select=$('outageMachine'), prev=select.value;
+  select.replaceChildren();
+  for (const m of s.machines) {const o=e('option',m.id);o.value=m.id;select.append(o)}
+  if(s.machines.some(m=>m.id===prev)) select.value=prev;
+}
+function applyOutage() {
+  let scenario;
+  try {scenario=readScenario()} catch(err) {setStatus('Invalid JSON: '+err.message,true);return}
+  const mid=$('outageMachine').value,start=Number($('outageStart').value),end=Number($('outageEnd').value);
+  if(!mid || !Number.isInteger(start) || !Number.isInteger(end) || start<0 || end>10000 || start>=end){
+    setStatus('Enter a valid machine and integer outage start/end times.',true);return;
+  }
+  const machine=scenario.machines.find(m=>m.id===mid);
+  if(!machine){setStatus('Machine not found in current scenario.',true);return}
+  const intervals=[...(machine.downtime||[]).map(x=>[x.start,x.end]),[start,end]].sort((a,b)=>a[0]-b[0]);
+  const merged=[];
+  for(const [a,b] of intervals){const prior=merged[merged.length-1];
+    if(!prior||a>prior[1]) merged.push([a,b]);else prior[1]=Math.max(prior[1],b);}
+  machine.downtime=merged.map(([a,b])=>({start:a,end:b}));
+  scenario.factory_name=(scenario.factory_name||'Factory')+' | what-if outage '+mid+' '+start+'–'+end+'h';
+  $('jsonEditor').value=JSON.stringify(scenario,null,2);
+  displayStats(scenario);lastResult=null;$('downloadButton').disabled=true;
+  setStatus('Outage applied to scenario; run optimization to calculate new feasible schedule.');
+}
 function displayStats(s) {
+  refreshMachineOptions(s);
   const box=$('scenarioStats');box.replaceChildren();
   const vals=[['Machines', s.machines.length],['Production orders',s.jobs.length],
     ['Operations',s.jobs.reduce((a,j)=>a+j.operations.length,0)],
@@ -43,9 +69,10 @@ function meta(key,val) {const c=e('div');c.append(e('div',key,'meta-key'),e('div
 function renderResult() {
   if(!lastResult||!currentScenario)return;
   const b=lastResult.baseline.metrics,o=lastResult.optimized.metrics,sol=lastResult.solver;
+  const baselineName=lastResult.baseline.name||'selected baseline';
   const improvement=lastResult.improvement_percent;
   const area=$('kpis');area.replaceChildren(
-    kpi('Weighted tardiness',o.weighted_tardiness,b.weighted_tardiness,improvement===null?'EDD baseline has zero tardiness':`${improvement.toFixed(2)}% improvement vs. EDD`, o.weighted_tardiness<b.weighted_tardiness),
+    kpi('Weighted tardiness',o.weighted_tardiness,b.weighted_tardiness,improvement===null?'Selected baseline has zero tardiness':`${improvement.toFixed(2)}% improvement vs. ${baselineName}`, o.weighted_tardiness<b.weighted_tardiness),
     kpi('Late customer orders',o.late_jobs,b.late_jobs,`${currentScenario.jobs.length} total orders`,o.late_jobs<b.late_jobs),
     kpi('Makespan · hours',o.makespan,b.makespan,'Final completion time',o.makespan<b.makespan),
     kpi('Solve time · sec',sol.solve_seconds.toFixed(3),null,sol.optimality_proven?'Mathematical optimum proven':'Best feasible plan / time limit',false)
@@ -92,7 +119,7 @@ async function run(){
   currentScenario=scenario;displayStats(scenario);const btn=$('runButton');btn.disabled=true;btn.textContent='Optimizing production…';
   $('runState').textContent='Solving';setStatus('Computing feasible schedule and MILP optimality…');
   try {
-    const response=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time})});
+    const response=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time,baseline_policy:$('baselinePolicy').value})});
     const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Server error');
     lastResult=data;setTab('optimized');renderResult();await refreshHistory();setStatus('Completed and validated. '+(data.persisted?'Saved to your local experiment history. ': 'Public demo, export results to keep them. ')+data.note);
   }catch(err){$('runState').textContent='Error';setStatus('Cannot run: '+err.message,true)}
@@ -135,6 +162,7 @@ async function boot(){
         $('limitInput').value = String(Math.min(4, maxSolverSeconds));
     }
   } catch (error) { /* Local fallback retains documented 60-second cap. */ }
+  $('applyOutage').addEventListener('click',applyOutage);
   $('runButton').addEventListener('click',run);$('tabOptimized').addEventListener('click',()=>setTab('optimized'));
   $('tabBaseline').addEventListener('click',()=>setTab('baseline'));$('downloadButton').addEventListener('click',downloadResult);
   $('toggleEditor').addEventListener('click',()=>{$('editorPanel').hidden=!$('editorPanel').hidden});

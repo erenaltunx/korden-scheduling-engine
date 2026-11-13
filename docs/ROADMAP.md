@@ -24,7 +24,8 @@ The core evidence is not a dashboard screenshot but a **reproducible numerical i
 - [x] Codespaces container for no-download browser development.
 - [x] Render deployment blueprint and public-demo resource limits.
 - [x] MIT license, contribution instructions and deployment guide.
-- [ ] Publish repository and verify GitHub Actions in the hosted environment.
+- [x] Publish full repository to GitHub.
+- [ ] Verify all GitHub Actions jobs pass in the hosted environment.
 - [ ] Publish an accessible hosted demo and smoke-test it externally.
 
 ## Foundation hardening (v0.3 — implemented locally)
@@ -36,14 +37,17 @@ The core evidence is not a dashboard screenshot but a **reproducible numerical i
 - [x] History UI and recovery API, disabled on publicly hosted demos.
 - [x] Docker persistent volume, dependency pins, Dependabot and container smoke CI.
 - [x] Threat boundary and disaster recovery/restore playbook.
-- [ ] Publish code to GitHub, verify hosted CI, create a GitHub release tag.
+- [x] Publish code to GitHub.
+- [ ] Verify hosted CI, create a GitHub release tag.
 - [ ] Restore a backup from production-like deployment and verify with browser.
 
 ## Milestone 2: rigorous benchmarking (v0.4)
 
 - [x] Generate initial 20 small synthetic instances with fixed seeds.
-- [ ] Extend to ≥50 heterogeneous small/medium instances.
-- [ ] Compare EDD, shortest-processing-time, critical-ratio and MILP.
+- [x] Run 60 deterministic held-out small synthetic instances (seed 100..159).
+- [ ] Add heterogeneous public benchmark families and medium instances.
+- [x] Compare EDD, FIFO, SPT, WSPT and MILP against best classical baseline.
+- [ ] Add critical-ratio and public benchmark comparisons.
 - [x] Track solver gap and run time, write initial 20-instance summary.
 - [ ] Add larger instances and percentile statistics.
 - [x] Export reproducible per-instance CSV and JSON summaries.
@@ -59,7 +63,8 @@ The core evidence is not a dashboard screenshot but a **reproducible numerical i
 
 ## Milestone 4: disruption management (v0.5)
 
-- [ ] Machine breakdown and urgent-order what-if scenarios.
+- [x] Counterfactual downtime scenario generator and web editor from time zero.
+- [ ] Rolling rescheduling that freezes started work and urgent-order insertion.
 - [ ] Penalize changes to an already committed schedule (schedule stability).
 - [ ] Stochastic evaluation across sampled disruption scenarios.
 

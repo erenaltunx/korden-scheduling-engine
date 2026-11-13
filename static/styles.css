@@ -3,3 +3,8 @@
 .history-button{display:block;width:100%;background:transparent;color:inherit;border:1px solid rgba(140,158,195,.3);border-radius:8px;text-align:left;padding:10px;margin:7px 0;cursor:pointer}.history-button:hover{background:rgba(124,146,190,.12)}
 
 .history-heading{margin-top:1.5rem}
+
+/* Outage controls share the sidebar grid without inline styles (CSP safe). */
+.outage-time-row {display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0;}
+.outage-time-row label {font-size:12px;min-width:0;}
+.outage-time-row input {display:block;max-width:100%;width:100%;box-sizing:border-box;margin-top:5px;}

@@ -8,6 +8,8 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
+from typing import Literal
+from .baseline import POLICIES
 from .service import compare
 from .storage import get_experiment, list_experiments, save_experiment
 
@@ -16,7 +18,7 @@ PUBLIC_DEMO = os.getenv("KORDEN_PUBLIC_DEMO", "0").lower() in {"1", "true", "yes
 # Public demo is not multi-tenant: it must NEVER expose or persist private experiments.
 MAX_REQUEST_BYTES = 128 * 1024
 PUBLIC_SOLVER_SLOTS = BoundedSemaphore(value=2)
-app = FastAPI(title="KORDEN — Industrial Scheduling & Optimization", version="0.3.0")
+app = FastAPI(title="KORDEN — Industrial Scheduling & Optimization", version="0.4.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
@@ -24,6 +26,7 @@ class RunRequest(BaseModel):
     scenario: dict
     time_limit: float = Field(default=8.0, ge=0.5, le=60)
     engine: str = Field(default="milp_highs", max_length=40)
+    baseline_policy: Literal["edd", "fifo", "spt", "wspt"] = "edd"
 
 
 @app.middleware("http")
@@ -56,14 +59,14 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "application": "KORDEN", "version": "0.3.0"}
+    return {"status": "ok", "application": "KORDEN", "version": "0.4.0"}
 
 
 @app.get("/api/config")
 def config():
     return {"public_demo": PUBLIC_DEMO, "max_solver_seconds": 5 if PUBLIC_DEMO else 60,
             "max_orders": 8 if PUBLIC_DEMO else 30, "schema_version": 1,
-            "archive_enabled": not PUBLIC_DEMO}
+            "archive_enabled": not PUBLIC_DEMO, "baseline_policies": POLICIES}
 
 
 @app.get("/api/scenarios")
@@ -96,7 +99,8 @@ def run_schedule(payload: RunRequest):
             raise HTTPException(status_code=429, detail="Solver busy. Please try again shortly.")
     try:
         try:
-            result = compare(payload.scenario, payload.time_limit, engine=payload.engine)
+            result = compare(payload.scenario, payload.time_limit, engine=payload.engine,
+                             baseline_policy=payload.baseline_policy)
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
         if PUBLIC_DEMO:

@@ -2,9 +2,9 @@
 
 **Plan smarter. Produce better.**
 
-KORDEN is an independent, local-first **operations research** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
+KORDEN is an independent, local-first **operations research** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
-**Version:** 0.3.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+**Version:** 0.4.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
 
 ## Run with no ZIP or local installation — once published on GitHub
 
@@ -26,6 +26,8 @@ Open http://127.0.0.1:8000. On Windows `launch_windows.bat` can also start the a
 ## Features currently implemented
 
 - Synthetic factory scenario selection and editable JSON input.
+- Four transparent dispatching baselines and a held-out benchmark laboratory against the strongest rule per factory.
+- Counterfactual machine downtime what-if editing, with non-destructive original input.
 - **Non-preemptive machine allocation and scheduling:** operations must follow order precedence and respect releases, maintenance outages and eligible machines.
 - MILP engine with an explicit registry ready for additional solvers; invalid or unsupported solvers are rejected.
 - Independent feasibility checker and weighted tardiness, total tardiness, late jobs and makespan KPIs.
@@ -39,6 +41,7 @@ Open http://127.0.0.1:8000. On Windows `launch_windows.bat` can also start the a
 python -m pytest -q
 python benchmark.py samples/assembly_cell.json --time-limit 10
 python benchmark_suite.py --count 20 --jobs 5 --time-limit 2
+python benchmark_lab.py --count 60 --jobs 5 --start-seed 100 --time-limit 2
 ```
 
 | Synthetic factory | EDD weighted tardiness | Optimized weighted tardiness | Relative reduction |
@@ -47,13 +50,19 @@ python benchmark_suite.py --count 20 --jobs 5 --time-limit 2
 | Precision Workshop (6 jobs) | 14 | 13 | **7.14%** |
 | 20 generated small instances (aggregate) | 214 | 95 | **55.61%** |
 
-Weighted tardiness is **weighted hours, not money saved**. Results are small *synthetic* scenarios, not real production cost reductions or claims about past employers. 20/20 generated instances previously achieved proven optimality at the stated setup; each fresh run reports its own status. See `docs/EXPERIMENTS.md`.
+Weighted tardiness is **weighted hours, not money saved**. Results are small *synthetic* scenarios, not real production cost reductions or claims about past employers. 20/20 generated instances previously achieved proven optimality at the stated setup; each fresh run reports its own status. See `docs/EXPERIMENTS.md` for the initial report and `docs/benchmarks/README.md` for the stronger held-out benchmark.
+
+## Stronger 60-instance held-out benchmark (v0.4)
+
+Evaluated **60** additional synthetic instances (seeds 100–159; 300 orders / 900 operations) against the **best of EDD, FIFO, SPT and WSPT per instance**. The MILP plan reduced pooled weighted tardiness **404 → 238 (41.09%)**, improving 21 instances and tying 39, with optimality proven for all 60. This is a strictly tougher baseline than the initial EDD-only report and **not a real factory cost or delivery improvement**. The generator is still synthetic and narrow in scope; outside benchmark families remain future work.
+
+All per-seed results, methodology, exact commands and checksum are published in [`docs/benchmarks`](docs/benchmarks/README.md). Frontend also supports a non-destructive planned downtime what-if edit; each new scenario can be re-optimized but already executed tasks are not frozen.
 
 ## Model and limitations
 
 - MILP uses integer-hour start times, binary machine assignment, ordering constraints, non-overlap with tasks and machine maintenance, weighted tardiness first and makespan tie-break.
 - Time-limited optimization may return a feasible incumbent without proof; if no better plan is available the application retains the feasible EDD plan and labels it as fallback.
-- In this version there are **no sequence-dependent changeovers, staffing shifts, material constraints, stochastic breakdowns, or multi-user access**. Larger schedules can be slow due to quadratic pairwise ordering.
+- In this version there are **no sequence-dependent changeovers, staffing shifts, material constraints, stochastic breakdowns, or multi-user access**. The what-if downtime editor is a deterministic planning counterfactual from time zero; it does **not** freeze already-started work. Larger schedules can be slow due to quadratic pairwise ordering.
 - More complex constraints are only introduced with matched solver constraints, independent validation rules, tests and a schema migration.
 
 ## How to keep your work safe

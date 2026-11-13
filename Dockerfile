@@ -8,7 +8,7 @@ RUN python -m pip install --no-cache-dir -r requirements.txt && python -m pip ch
 COPY korden/ ./korden/
 COPY static/ ./static/
 COPY samples/ ./samples/
-COPY run.py benchmark.py benchmark_suite.py backup.py ./
+COPY run.py benchmark.py benchmark_suite.py benchmark_lab.py backup.py ./
 RUN mkdir -p /data
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
