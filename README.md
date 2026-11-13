@@ -4,8 +4,14 @@
 
 OPTERA is an independent, local-first **finite-capacity manufacturing scheduling** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
-**Version:** 0.13.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+**Version:** 0.14.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
 
+
+## v0.14 — Finite production-cell working periods
+
+Machine/resources may specify optional `working_windows` as a finite list of absolute allowed time intervals. Non-preemptive production operations must fit fully inside one listed period; closed hours, existing downtime and changeovers are respected by **every dispatching rule, hybrid search, HiGHS MILP and independent feasibility checks**. An impossible work calendar fails explicitly rather than inventing additional hours.
+
+The browser includes a guided shift-period editor and Gantt closure shading. Run `python shift_lab.py` or use `samples/shift_cell.json`. Tested scope: integer time offsets, **no repeating weekly shifts**, DST, timezone conversion, preemption or live workforce attendance. Historical scenarios without this optional field continue unchanged.
 
 ## v0.10 — Harder, more honest manufacturing evidence
 
