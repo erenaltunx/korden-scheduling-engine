@@ -34,6 +34,7 @@ jobs:
           OPTERA_DATA_DIR: ${{ runner.temp }}/optera-test-data
       - run: python -m compileall -q optera
       - run: node --check static/app.js
+      - run: node tests/test_planner_input_safety.cjs
       - name: Verify old branding is absent from public views
         run: |
           old_name=$(printf '%s%s' 'KOR' 'DEN')
