@@ -14,6 +14,12 @@ We replaced a single-machine success story with a **70-instance, four-complexity
 
 A fixed-seed 10-congested-workshop time-budget study found guarded weighted tardiness 1,569 / 1,452 / 1,265 under 0.7 / 2 / 5 seconds (classic comparator 1,597). No mathematical proof of optimality was achieved for any of these 10 scenarios, **even at 5 seconds**. The immediate next effort is mathematical-model strengthening on these same seeds under equal compute budgets. See [evidence](SOLVER_BUDGET_STUDY.md). These are *synthetic* results, not factory savings or an algorithmic breakthrough.
 
+## Current gate: v0.12 hybrid scheduling and tightening
+
+**Completed engineering:** deterministic swap/insertion local search (150-order evaluation budget) under existing plant constraints, HiGHS MILP with tighter time bounds/Big-M coefficients, independently checked hybrid selection, and 40-scenario paired research export. Across 501 synthetic operations the strongest four classical dispatch rules scored 2,757 weighted delay units versus hybrid 2,132 (**−22.67%**); 30/40 MILP optima proven. Congested cases improved 18.35% but remain 0/10 proof-certified in 0.7-second MILP budget. Technical evidence: [v0.12 study](HYBRID_ENGINEERING_EVIDENCE.md). The heuristic does not prove optimality; its additional computation is tracked separately.
+
+**Next gate:** field-level production constraints (shift calendars in all three model/verifier/baseline layers), matched **equal total wall-time** comparison vs MILP alone, additional external known-optimum instances, and a permissioned real work-order sample. No additional sectors or AI layers. Moving above 65 requires demonstrated shift correctness and an externally verifiable demonstration; above 75 requires real operational data or independent external validation.
+
 ## Hard boundaries (protect deep specialization)
 
 - Domain: job-shop and flexible job-shop scheduling on machining/fabrication cells, under finite machine and qualified-worker capacity.
