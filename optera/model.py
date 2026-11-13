@@ -60,6 +60,22 @@ def validate_scenario(data: dict) -> dict:
             if a[1] > b[0]:
                 raise ValueError(f"Overlapping downtime windows on {mid}")
         downtime[mid] = parsed
+        # Optional finite operating periods; never infer recurring shifts.
+        periods = m.get("working_windows")
+        if periods is not None:
+            if not isinstance(periods, list) or not 1 <= len(periods) <= 32:
+                raise ValueError(f"Machine {mid}: working_windows must contain 1–32 periods")
+            available = []
+            for period in periods:
+                if not isinstance(period, dict):
+                    raise ValueError(f"Machine {mid}: each working period needs start and end")
+                start, end = period.get("start"), period.get("end")
+                if type(start) is not int or type(end) is not int or not 0 <= start < end <= 10000:
+                    raise ValueError(f"Machine {mid}: invalid working period")
+                available.append((start, end))
+            available.sort()
+            if any(a[1] > b[0] for a, b in zip(available, available[1:])):
+                raise ValueError(f"Machine {mid}: working periods must not overlap")
     jobids = set()
     num_ops = 0
     for job in jobs:
@@ -128,8 +144,22 @@ def all_tasks(data: dict) -> list[Task]:
 
 
 def downtime_by_machine(data: dict) -> dict[str, list[tuple[int, int]]]:
-    return {m["id"]: sorted((w["start"], w["end"]) for w in m.get("downtime", []))
-            for m in data["machines"]}
+    """Availability blackouts shared by baselines, MILP and independent checking."""
+    limit = horizon(data)
+    result = {}
+    for machine in data["machines"]:
+        blocked = [(w["start"], w["end"]) for w in machine.get("downtime", [])]
+        working = machine.get("working_windows")
+        if working is not None:
+            cursor = 0
+            for period in sorted(working, key=lambda p: p["start"]):
+                if cursor < period["start"]:
+                    blocked.append((cursor, period["start"]))
+                cursor = period["end"]
+            if cursor < limit:
+                blocked.append((cursor, limit))
+        result[machine["id"]] = sorted(blocked)
+    return result
 
 
 def changeover_by_machine(data: dict) -> dict[str, int]:
@@ -145,7 +175,8 @@ def changeover_gap(family_before: str | None, family_after: str | None, setup_ti
 def horizon(data: dict) -> int:
     total_duration = sum(t.duration for t in all_tasks(data))
     max_anchor = max([j["release"] for j in data["jobs"]] +
-                     [w["end"] for m in data["machines"] for w in m.get("downtime", [])] + [0])
+                     [w["end"] for m in data["machines"] for w in m.get("downtime", [])] +
+                     [w["end"] for m in data["machines"] for w in m.get("working_windows", [])] + [0])
     # Valid upper bound: all tasks can run in sequence after every release and outage ends.
     tasks = all_tasks(data)
     max_setup = max(changeover_by_machine(data).values(), default=0)

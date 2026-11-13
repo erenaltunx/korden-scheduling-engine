@@ -5,7 +5,7 @@ eligibility and machine downtime; only job priority changes.
 """
 from __future__ import annotations
 from fractions import Fraction
-from .model import (downtime_by_machine, validate_scenario, changeover_by_machine,
+from .model import (downtime_by_machine, horizon, validate_scenario, changeover_by_machine,
                     changeover_gap)
 
 POLICIES = {
@@ -78,6 +78,10 @@ def _schedule_jobs(data: dict, jobs: list[dict]) -> list[dict]:
                         primary_occupied[machine], op.get('setup_family'), setup_times[machine])
                     options.append((start + op["duration"], start, machine, choice or ''))
             end, start, machine, choice = min(options)
+            if end > horizon(data):
+                raise ValueError(
+                    f"No feasible working period for order {job['id']} operation {op['id']}; "
+                    "extend working_windows or review operation durations")
             reserved = [*op.get('support_resources', []), *([choice] if choice else [])]
             row = {"key": f"{job['id']}::{i}", "job": job["id"],
                    "operation": op["id"], "machine": machine,

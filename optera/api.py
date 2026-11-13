@@ -28,7 +28,7 @@ PUBLIC_DEMO = os.getenv("OPTERA_PUBLIC_DEMO", "0").lower() in {"1", "true", "yes
 MAX_REQUEST_BYTES = 128 * 1024
 MAX_XLSX_REQUEST_BYTES = 512 * 1024
 PUBLIC_SOLVER_SLOTS = BoundedSemaphore(value=2)
-app = FastAPI(title="OPTERA — Cross-Industry Resource Optimization", version="0.13.0")
+app = FastAPI(title="OPTERA — Cross-Industry Resource Optimization", version="0.14.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
@@ -125,7 +125,7 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "application": "OPTERA", "version": "0.13.0"}
+    return {"status": "ok", "application": "OPTERA", "version": "0.14.0"}
 
 
 @app.get("/api/config")

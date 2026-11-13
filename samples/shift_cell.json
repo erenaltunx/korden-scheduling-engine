@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "factory_name": "OPTERA | Two-Shift CNC Cell",
+  "machines": [
+    {
+      "id": "CNC_1",
+      "downtime": [],
+      "changeover_time": 2,
+      "working_windows": [
+        {
+          "start": 8,
+          "end": 16
+        },
+        {
+          "start": 24,
+          "end": 32
+        }
+      ]
+    }
+  ],
+  "jobs": [
+    {
+      "id": "A",
+      "release": 0,
+      "due": 12,
+      "weight": 4,
+      "operations": [
+        {
+          "id": "mill",
+          "duration": 2,
+          "machines": [
+            "CNC_1"
+          ],
+          "setup_family": "A"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "release": 0,
+      "due": 16,
+      "weight": 2,
+      "operations": [
+        {
+          "id": "mill",
+          "duration": 3,
+          "machines": [
+            "CNC_1"
+          ],
+          "setup_family": "B"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "release": 0,
+      "due": 29,
+      "weight": 5,
+      "operations": [
+        {
+          "id": "mill",
+          "duration": 3,
+          "machines": [
+            "CNC_1"
+          ],
+          "setup_family": "A"
+        }
+      ]
+    }
+  ]
+}

@@ -1,3 +1,10 @@
+## v0.14.0 — Finite factory working periods and independent verification
+- Enforce optional explicit working periods for machines and concurrent support resources.
+- Translate closed hours into mathematical blackout constraints shared by baseline, MILP and verifier.
+- Refuse impossible working calendars instead of silently scheduling phantom shifts.
+- Add guided UI working-period editor, Gantt closed-shift shading, regression tests and shift laboratory.
+- Explicitly exclude recurring weekly calendars, DST, and industrial pilot claims.
+
 ## v0.12.0 — Hybrid finite-capacity scheduling and solution-quality audit (2026-11-13)
 - Added deterministic swap/insertion job-priority local search, independently validated against the same resource, sequence, maintenance and setup constraints as four classical dispatch policies.
 - Introduced hybrid local-search + MILP engine (separate research-grade optimum proof status, raw candidate evidence, timing and selected algorithm); kept MILP-only makespan option.

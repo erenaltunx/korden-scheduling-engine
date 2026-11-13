@@ -58,7 +58,7 @@ def check_schedule(data: dict, schedule: list[dict]) -> list[str]:
         for start, end, key in intervals:
             for da, db in downtime_by_machine(data)[mid]:
                 if start < db and end > da:
-                    errors.append(f"Operation {key} overlaps maintenance on {mid}")
+                    errors.append(f"Operation {key} overlaps maintenance or a closed shift on {mid}")
     setup_times = changeover_by_machine(data)
     for mid, ops in primary_occupied.items():
         for prev, following in zip(sorted(ops), sorted(ops)[1:]):
