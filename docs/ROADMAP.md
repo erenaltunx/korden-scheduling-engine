@@ -85,3 +85,19 @@ The core evidence is not a dashboard screenshot but a **reproducible numerical i
 2. Percent reduction is `(baseline - optimized) / baseline * 100` for a metric with nonzero baseline.
 3. Never report an observed simulation reduction as factory savings without real deployment evidence.
 4. One instance is a demo; multiple diverse instances are needed to support robust performance claims.
+
+
+## v0.6 — From single-factory demo to portable operations platform
+
+- [x] Versioned universal work-order/resource schema with capability matching and time units.
+- [x] Fail-closed rejection of unsupported resource capacities, multiple staff and routing fields.
+- [x] Three complete sector scenarios on the same optimizer: discrete manufacturing, field service and warehouse.
+- [x] No-JSON UI controls to edit due dates, priority and unavailability.
+- [x] Reproducible three-sector, best-of-four benchmark and CI test.
+- [ ] Cross-industry rolling-reschedule adapter with formal execution state transitions.
+- [ ] Multi-resource resource requirements, shift calendars, setup and transit times.
+- [ ] Strong CP-SAT and scalable heuristic solver registry with honest time-limit metadata.
+- [ ] Real customer pilot with opt-in, permissioned data ingestion, rigorous domain validation and independent outcome measurement.
+- [ ] Hosted demo with synthetic data and a publicly verified browser smoke test.
+
+See `VISION_AND_DOMAIN_CONTRACT.md`; never confuse initial portability of the data contract with full model coverage of all industries.

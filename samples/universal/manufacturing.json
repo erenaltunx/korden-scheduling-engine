@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "name": "Precision Component Cell",
+  "industry": "Discrete manufacturing",
+  "time_unit": "hour",
+  "resources": [
+    {
+      "id": "MILL_1",
+      "name": "CNC mill A",
+      "kind": "cnc_machine",
+      "capabilities": [
+        "milling"
+      ],
+      "unavailable": [
+        {
+          "start": 10,
+          "end": 13
+        }
+      ]
+    },
+    {
+      "id": "MILL_2",
+      "name": "CNC mill B",
+      "kind": "cnc_machine",
+      "capabilities": [
+        "milling"
+      ],
+      "unavailable": []
+    },
+    {
+      "id": "QC_1",
+      "name": "Inspection bench",
+      "kind": "inspection_station",
+      "capabilities": [
+        "inspection"
+      ],
+      "unavailable": []
+    }
+  ],
+  "work_orders": [
+    {
+      "id": "BATCH_A",
+      "name": "Hydraulic batch A",
+      "available_at": 0,
+      "due_at": 13,
+      "priority": 4,
+      "steps": [
+        {
+          "id": "cut",
+          "name": "CNC milling",
+          "duration": 6,
+          "requires_all": [
+            "milling"
+          ]
+        },
+        {
+          "id": "inspect",
+          "name": "Quality inspection",
+          "duration": 3,
+          "requires_all": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BATCH_B",
+      "name": "Hydraulic batch B",
+      "available_at": 0,
+      "due_at": 11,
+      "priority": 2,
+      "steps": [
+        {
+          "id": "cut",
+          "name": "CNC milling",
+          "duration": 5,
+          "requires_all": [
+            "milling"
+          ]
+        },
+        {
+          "id": "inspect",
+          "name": "Quality inspection",
+          "duration": 4,
+          "requires_all": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BATCH_C",
+      "name": "Spare parts C",
+      "available_at": 1,
+      "due_at": 15,
+      "priority": 5,
+      "steps": [
+        {
+          "id": "cut",
+          "name": "CNC milling",
+          "duration": 7,
+          "requires_all": [
+            "milling"
+          ]
+        },
+        {
+          "id": "inspect",
+          "name": "Quality inspection",
+          "duration": 2,
+          "requires_all": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BATCH_D",
+      "name": "Urgent repair spares",
+      "available_at": 2,
+      "due_at": 12,
+      "priority": 9,
+      "steps": [
+        {
+          "id": "cut",
+          "name": "CNC milling",
+          "duration": 5,
+          "requires_all": [
+            "milling"
+          ]
+        },
+        {
+          "id": "inspect",
+          "name": "Quality inspection",
+          "duration": 3,
+          "requires_all": [
+            "inspection"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "BATCH_E",
+      "name": "Standard production lot",
+      "available_at": 0,
+      "due_at": 22,
+      "priority": 1,
+      "steps": [
+        {
+          "id": "cut",
+          "name": "CNC milling",
+          "duration": 8,
+          "requires_all": [
+            "milling"
+          ]
+        },
+        {
+          "id": "inspect",
+          "name": "Quality inspection",
+          "duration": 3,
+          "requires_all": [
+            "inspection"
+          ]
+        }
+      ]
+    }
+  ]
+}

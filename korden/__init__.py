@@ -1,2 +1,2 @@
-"""KORDEN | Industrial Scheduling & Optimization Engine."""
-__version__ = "0.3.0"
+"""KORDEN | Cross-Industry Resource Scheduling & Optimization Engine."""
+__version__ = "0.6.0"

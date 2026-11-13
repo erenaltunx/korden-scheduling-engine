@@ -32,6 +32,7 @@ jobs:
         env:
           KORDEN_DATA_DIR: ${{ runner.temp }}/korden-test-data
       - run: python -m compileall -q korden
+      - run: node --check static/app.js
       - name: Verify brand cleanup
         run: |
           old_name=$(printf '%s%s' 'FOR' 'GE')
@@ -71,6 +72,32 @@ jobs:
         with:
           name: korden-four-policy-benchmark
           path: artifacts/lab.*
+
+  cross-industry-workloads:
+    name: Cross-industry capability and scheduling audit
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python universal_benchmark.py --limit 6 --out artifacts/cross_industry
+      - name: Verify all independent scheduling results
+        run: |
+          python - <<'PYCODE'
+          import json
+          data=json.load(open('artifacts/cross_industry.json'))
+          assert len(data)==3
+          assert {r['industry'] for r in data}=={'Discrete manufacturing','Field service','Warehouse operations'}
+          assert all(r['feasible_schedule'] and r['optimized_weighted_tardiness'] is not None for r in data)
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: korden-cross-industry-audit
+          path: artifacts/cross_industry.*
 
   external-reference-benchmark:
     name: FT06 published optimum regression
@@ -147,5 +174,6 @@ jobs:
           curl -fsS http://127.0.0.1:8000/api/health | grep -q KORDEN
           curl -fsS http://127.0.0.1:8000/ | grep -q KORDEN
           curl -fsS http://127.0.0.1:8000/api/public-benchmarks/ft06 | grep -q JSPLIB
+          curl -fsS http://127.0.0.1:8000/api/universal/templates | grep -q 'Field service'
       - if: always()
         run: docker logs korden-smoke || true
