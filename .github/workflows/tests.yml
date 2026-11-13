@@ -70,7 +70,7 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements.txt
       - run: python benchmark_lab.py --count 15 --jobs 5 --time-limit 3 --start-seed 100 --out artifacts/lab
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-four-policy-benchmark
           path: artifacts/lab.*
@@ -97,7 +97,7 @@ jobs:
           assert {r['industry'] for r in data}=={'Discrete manufacturing','Field service','Warehouse operations'}
           assert all(r['feasible_schedule'] and r['optimized_weighted_tardiness'] is not None for r in data)
           PYCODE
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-cross-industry-audit
           path: |
@@ -123,7 +123,7 @@ jobs:
           a=json.load(open('artifacts/ft06.json'))
           assert a['solver_makespan']==55 and a['proven_optimality_matches_reference']
           PYCODE
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-external-ft06
           path: artifacts/ft06.json
@@ -140,7 +140,7 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements.txt
       - run: python disruption_lab.py --count 10 --time-limit 3 --out artifacts/disruption
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-rolling-reschedule-replay
           path: artifacts/disruption.*
@@ -157,7 +157,7 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements.txt
       - run: python benchmark_suite.py --count 10 --jobs 5 --time-limit 4 --out artifacts/ci_suite
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-ci-benchmark
           path: artifacts/ci_suite.*
@@ -185,7 +185,7 @@ jobs:
           assert evidence['optimized_feasible']
           assert evidence['optimized_weighted_tardiness'] <= evidence['baseline_weighted_tardiness']
           PYCODE
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-finite-shift-evidence
           path: artifacts/shift_window_evidence.json
@@ -236,7 +236,7 @@ jobs:
           assert actual['summary']['optimized_total']==327
           assert all(a['optimized_weighted_tardiness']<=a['baseline_weighted_tardiness'] for a in actual['rows'])
           PYCODE
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-hmlv-changeover-audit
           path: artifacts/hmlv_changeovers.*
@@ -266,7 +266,7 @@ jobs:
           assert rows==[('baseline',16),('optimized',16)],rows
           assert con.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
           PYCODE
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-workforce-sql-audit
           path: |
@@ -297,7 +297,7 @@ jobs:
           assert all(len(r['input_sha256'])==64 for r in x['rows'])
           assert set(x['profile_summaries'])=={'single_cell','two_stage','flexible_cell','congested_cell'}
           PYCODE
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-mixed-workshop-evidence
           path: artifacts/mixed_workshops.*
@@ -327,7 +327,7 @@ jobs:
           assert report['metadata']['warm_start'] is False
           assert all(r['time_budget_seconds'] in (0.7,2.0) for r in rows)
           PYCODE
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-solver-budget-smoke
           path: artifacts/solver_budget_smoke.*
@@ -357,7 +357,7 @@ jobs:
           assert all(r['full_wall_seconds']>=r['local_search_seconds'] for r in x['rows'])
           assert all(isinstance(r['optimality_proven'],bool) for r in x['rows'])
           PYCODE
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: optera-hybrid-scheduling-audit
           path: artifacts/hybrid_smoke.*

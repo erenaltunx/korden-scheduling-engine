@@ -62,7 +62,7 @@ jobs:
           else
             echo 'Chrome CLI unavailable; API and static UX checks still passed.'
           fi
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: optera-live-planner-screenshots
