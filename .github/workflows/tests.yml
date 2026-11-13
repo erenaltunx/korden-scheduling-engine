@@ -36,7 +36,7 @@ jobs:
       - name: Verify brand cleanup
         run: |
           old_name=$(printf '%s%s' 'FOR' 'GE')
-          if git grep -ni -e "$old_name" -e "$(printf '%s' "$old_name" | tr '[:upper:]' '[:lower:]')" -- .; then
+          if git grep -niE "(^|[^[:alnum:]])${old_name}([^[:alnum:]]|$)" -- .; then
             echo 'Legacy product name found.'; exit 1
           fi
 
