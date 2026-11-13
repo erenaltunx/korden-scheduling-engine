@@ -175,3 +175,12 @@ body{margin:0;background:#f5f8fa;color:#172c36}
   .excel-actions .secondary-button{width:100%}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+
+/* Accessible, calm exception guidance; use plain text from the response. */
+.planning-help{margin:16px 0 0;border:1px solid #e3d9c4;border-left:4px solid #b78743;border-radius:10px;background:#fffdf9;padding:15px 18px;color:#4c4a41}
+.planning-help-header{display:flex;align-items:center;gap:10px}
+.planning-help-symbol{display:grid;place-items:center;font-size:13px;font-weight:900;border:1px solid #dbc79d;color:#815c22;border-radius:50%;height:24px;width:24px;flex:none}
+.planning-help h3{margin:0;font-size:14px;font-weight:800;color:#51422d;line-height:1.4}
+.planning-help p{font-size:12px;line-height:1.7;margin:10px 0 0;overflow-wrap:anywhere;color:#555a55}
+.planning-help .planning-help-next{color:#485c56;margin-top:9px}
+@media(max-width:600px){.planning-help{padding:13px 14px}.planning-help h3{font-size:13px}}

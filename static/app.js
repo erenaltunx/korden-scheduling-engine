@@ -20,6 +20,17 @@ function setStatus(msg, error=false) {
   output.textContent=msg;
   output.style.color=error ? '#ab3434' : '#526b74';
 }
+function clearPlanningHelp(){
+  $('planningHelp').hidden=true;
+}
+function displayPlanningHelp(diagnostic, fallback){
+  // textContent is required: resource and order IDs originate in uploaded files.
+  const help=diagnostic && typeof diagnostic==='object'?diagnostic:{};
+  $('planningHelpTitle').textContent=help.title||'Could not create a production plan';
+  $('planningHelpExplanation').textContent=help.explanation||fallback||'Please review the scenario data.';
+  $('planningHelpAction').textContent=help.next_step||'Review machines, work periods and job durations, then try again.';
+  $('planningHelp').hidden=false;
+}
 function syncRunAvailability() {
   const ready = Boolean(currentScenario) && loadedInputKind === selectedInputMode;
   const button = $('runButton');
@@ -27,6 +38,7 @@ function syncRunAvailability() {
   button.setAttribute('aria-disabled', String(button.disabled));
 }
 function clearPlanPreview() {
+  clearPlanningHelp();
   lastResult = null;
   $('downloadButton').disabled=true;
   $('exportBiButton').disabled=true;
@@ -128,6 +140,7 @@ function readScenario() {
   return parsed;
 }
 async function loadScenario(name) {
+  clearPlanningHelp();
   if(name.startsWith('industry:')){await loadUniversal(name.slice(9));return;}
   loadedInputKind=null;inputRevision++;
   currentUniversalScenario = null;currentTimeUnit = 'hour';$('studioEditor').hidden=true;
@@ -250,6 +263,7 @@ function renderTimeline() {
 }
 function setTab(name){activeView=name;$('tabOptimized').classList.toggle('active',name==='optimized');$('tabBaseline').classList.toggle('active',name==='baseline');renderTimeline()}
 async function run(){
+  clearPlanningHelp();
   if(loadedInputKind !== selectedInputMode) {
     setStatus(selectedInputMode==='excel'
       ? 'Please validate and load your Excel file before generating a plan.'
@@ -269,16 +283,25 @@ async function run(){
   try {
     const endpoint=currentUniversalScenario?'/api/universal/run':'/api/run';
     const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time,engine:$('objectiveSelect').value==='makespan'?'milp_highs':$('engineSelect').value,baseline_policy:$('baselinePolicy').value,objective:$('objectiveSelect').value})});
-    const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Server error');
+    const data=await response.json();
     if(runRevision!==inputRevision) {
-      setStatus('Inputs changed while generating the plan. Previous result discarded; generate again.');
+      setStatus('Inputs changed during optimization. An old response was ignored.');
       return;
+    }
+    if(!response.ok) {
+      const error=new Error(typeof data.detail==='string'?data.detail:'Server error');
+      error.diagnostic=data.diagnostic;
+      throw error;
     }
     if(currentUniversalScenario){currentUniversalScenario=scenario;currentScenario=data.normalized_scenario;currentTimeUnit=scenario.time_unit;displayStats(currentScenario);populateStudioEditor();}
     lastResult=data;setTab('optimized');renderResult();await refreshHistory();
     setStatus('Plan ready and validated. '+(data.persisted?'Saved locally. ':'Public demo: download your result to keep it. ')+data.note);
     $('results').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
-  }catch(err){$('runState').textContent='Error';setStatus('Cannot run: '+err.message,true)}
+  }catch(err){
+    $('runState').textContent='Needs attention';
+    displayPlanningHelp(err.diagnostic,err.message);
+    setStatus('Review the guidance below to update your input and try again.',true);
+  }
   finally{runInProgress=false;syncRunAvailability();btn.innerHTML='<span class="run-icon">▶</span> Generate plan'}
 }
 
@@ -340,6 +363,7 @@ function enterpriseFeedback(message, isError=false) {
   setStatus(message,isError);
 }
 function acceptImportedEnterprise(data, format) {
+  clearPlanningHelp();
   currentUniversalScenario=data.scenario;currentScenario=data.normalized_scenario;currentTimeUnit=data.scenario.time_unit;
   $('jsonEditor').value=JSON.stringify(data.scenario,null,2);lastResult=null;
   $('downloadButton').disabled=true;$('exportBiButton').disabled=true;$('rescheduleButton').disabled=true;
@@ -350,7 +374,6 @@ function acceptImportedEnterprise(data, format) {
   setInputMode('excel');
   loadedInputKind='excel';
   inputRevision++;
-  setInputMode('excel');
   syncRunAvailability();
   enterpriseFeedback('Ready: '+data.profile.work_orders+' work orders and '+data.profile.steps+' operations validated. Now select Generate plan.');
 }
@@ -449,6 +472,7 @@ function updateStudioResourceInputs() {
   $('studioChangeoverTime').value=String(machine?.changeover_time||0);
 }
 async function loadUniversal(id) {
+  clearPlanningHelp();
   loadedInputKind=null;inputRevision++;
   setInputMode('demo');syncRunAvailability();
   const response=await fetch('/api/universal/templates/'+encodeURIComponent(id));

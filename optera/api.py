@@ -14,6 +14,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Literal
 from .baseline import POLICIES
+from .diagnostics import explain_scheduling_error
 from .service import compare
 from .reschedule import reschedule
 from .public_benchmarks import PUBLIC_INSTANCES, load_jsplib
@@ -30,6 +31,15 @@ MAX_XLSX_REQUEST_BYTES = 512 * 1024
 PUBLIC_SOLVER_SLOTS = BoundedSemaphore(value=2)
 app = FastAPI(title="OPTERA — Cross-Industry Resource Optimization", version="0.14.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
+
+
+def planning_input_error(error: ValueError, scenario: dict) -> JSONResponse:
+    """Keep legacy detail a string while supplying optional structured guidance."""
+    return JSONResponse(
+        status_code=422,
+        content={"detail": str(error),
+                 "diagnostic": explain_scheduling_error(error, scenario)},
+    )
 
 
 class RunRequest(BaseModel):
@@ -162,7 +172,7 @@ def run_schedule(payload: RunRequest):
             result = compare(payload.scenario, payload.time_limit, engine=payload.engine,
                              baseline_policy=payload.baseline_policy, objective=payload.objective)
         except ValueError as error:
-            raise HTTPException(status_code=422, detail=str(error)) from error
+            return planning_input_error(error, payload.scenario)
         if PUBLIC_DEMO:
             return {**result, "persisted": False}
         # The local archive is durable and versioned; DB exceptions must not be swallowed.
@@ -262,12 +272,15 @@ def universal_run(payload: RunRequest):
     try:
         normalized = normalize_universal(payload.scenario)
     except ValueError as error:
-        raise HTTPException(status_code=422, detail=str(error)) from error
+        return planning_input_error(error, payload.scenario)
     public_solver_check(normalized, payload.time_limit)
     acquire_public_slot()
     try:
-        result = compare(normalized, payload.time_limit, engine=payload.engine,
-                         baseline_policy=payload.baseline_policy, objective=payload.objective)
+        try:
+            result = compare(normalized, payload.time_limit, engine=payload.engine,
+                             baseline_policy=payload.baseline_policy, objective=payload.objective)
+        except ValueError as error:
+            return planning_input_error(error, normalized)
         result['domain'] = describe_universal(payload.scenario)
         result['normalized_scenario'] = normalized
         result['note'] = ('Scenario-based cross-industry resource planning. '
