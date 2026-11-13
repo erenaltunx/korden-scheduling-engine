@@ -23,7 +23,7 @@ See [research evidence and caveats](docs/ENGINEERING_EVIDENCE_V1.md). Detailed C
 
 Optera can now **download a fictional manufacturing example workbook**, load a single edited **.xlsx** containing resources, orders, steps and optional downtime tabs, report sheet/cell validation errors, and compile the same strictly checked production model used for CSV input. No macros, formulas, links, hidden ERP credentials or unsupported constraints are executed. The user then clicks **Run optimization** to receive a verified Gantt schedule and KPI comparison.
 
-**Try without installation:** open GitHub Codespaces, or deploy the stateless synthetic-data-only Render demo using [Deploy to Render](https://render.com/deploy?repo=https://github.com/erenaltunx/korden-scheduling-engine). The `render.yaml` file is a deployment recipe, **not evidence of a currently running public website**. For confidential production data, run locally; do not upload to a public demo.
+**Try without installation:** open GitHub Codespaces, or deploy the stateless synthetic-data-only Render demo using [Render Dashboard](https://dashboard.render.com/). The `render.yaml` file is a deployment recipe, **not evidence of a currently running public website**. For confidential production data, run locally; do not upload to a public demo.
 
 ## v0.12 — Faster feasible plans for congested CNC cells (hybrid search + MILP)
 
