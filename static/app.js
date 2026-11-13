@@ -40,13 +40,33 @@ function applyOutage() {
   displayStats(scenario);lastResult=null;$('downloadButton').disabled=true;$('exportBiButton').disabled=true;$('rescheduleButton').disabled=true;
   setStatus('Outage applied to scenario; run optimization to calculate new feasible schedule.');
 }
+function applyShift() {
+  if(currentUniversalScenario){setStatus('Working periods are available for production-cell scenarios only.',true);return;}
+  let scenario;try{scenario=readScenario()}catch(err){setStatus('Invalid JSON: '+err.message,true);return;}
+  const mid=$('outageMachine').value,start=Number($('shiftStart').value),end=Number($('shiftEnd').value);
+  if(!mid||!Number.isInteger(start)||!Number.isInteger(end)||start<0||end>10000||start>=end){
+    setStatus('Choose a machine and valid working hours.',true);return;
+  }
+  const machine=scenario.machines.find(m=>m.id===mid);
+  if(!machine){setStatus('Unknown machine.',true);return;}
+  const periods=[...(machine.working_windows||[]),{start,end}].sort((a,b)=>a.start-b.start);
+  if(periods.some((w,i)=>i>0&&periods[i-1].end>w.start)){
+    setStatus('Working periods cannot overlap.',true);return;
+  }
+  machine.working_windows=periods;
+  $('jsonEditor').value=JSON.stringify(scenario,null,2);
+  displayStats(scenario);lastResult=null;
+  $('downloadButton').disabled=true;$('exportBiButton').disabled=true;$('rescheduleButton').disabled=true;
+  setStatus('Working period added. Run optimization again to enforce all closures.');
+}
 function displayStats(s) {
   refreshMachineOptions(s);
   const box=$('scenarioStats');box.replaceChildren();
   const vals=[['Resources', s.machines.length],['Work orders',s.jobs.length],
     ['Operations',s.jobs.reduce((a,j)=>a+j.operations.length,0)],
     ['Unavailable intervals',s.machines.reduce((a,m)=>a+(m.downtime||[]).length,0)],
-    ['Changeover-enabled machines',s.machines.filter(m=>(m.changeover_time||0)>0).length]];
+    ['Changeover-enabled machines',s.machines.filter(m=>(m.changeover_time||0)>0).length],
+    ['Work-calendar resources',s.machines.filter(m=>Array.isArray(m.working_windows)).length]];
   for(const [key,val] of vals){const r=e('div',undefined,'scenario-stat-row');r.append(e('span',key),e('strong',val));box.append(r)}
 }
 function readScenario() {
@@ -131,6 +151,22 @@ function renderTimeline() {
   for(const machine of machines){
     const row=e('div',undefined,'timeline-row');row.append(e('div',machine.id,'machine-name'));
     const track=e('div',undefined,'track');
+    if(machine.working_windows){
+      let cursor=0;
+      for(const period of [...machine.working_windows].sort((a,b)=>a.start-b.start)){
+        if(cursor<period.start){
+          const closed=e('div',undefined,'closed-shift-bar');
+          closed.style.left=percent(cursor);closed.style.width=percent(period.start-cursor);
+          closed.title=`Closed shift: ${cursor}–${period.start} ${unit}`;track.append(closed);
+        }
+        cursor=period.end;
+      }
+      if(cursor<horizon){
+        const closed=e('div',undefined,'closed-shift-bar');
+        closed.style.left=percent(cursor);closed.style.width=percent(horizon-cursor);
+        closed.title=`Closed after ${cursor} ${unit}`;track.append(closed);
+      }
+    }
     for(const down of machine.downtime||[]){const bar=e('div',undefined,'downtime-bar');bar.style.left=percent(down.start);bar.style.width=percent(down.end-down.start);bar.title=`Maintenance: ${down.start}–${down.end}h`;track.append(bar)}
     for(const task of schedule.filter(t=>t.machine===machine.id || (t.support_resources||[]).includes(machine.id))){
       const bar=e('div',task.job,'task-bar');
@@ -149,6 +185,7 @@ function renderTimeline() {
   const lg=$('chartLegend');lg.replaceChildren();
   for(const name of jobIds){const item=e('span',undefined,'legend-item'),dot=e('span',undefined,'legend-dot');dot.style.background=jobColors[name];item.append(dot,e('span',name));lg.append(item)}
   const item=e('span',undefined,'legend-item'),dot=e('span',undefined,'legend-dot');dot.style.background='#75465b';item.append(dot,e('span','Maintenance'));lg.append(item);
+  if(machines.some(m=>m.working_windows)){const closed=e('span',undefined,'legend-item');closed.append(e('span','▤'),'Closed shift');lg.append(closed)}
   if(schedule.some(t=>(t.support_resources||[]).length)){const support=e('span',undefined,'legend-item');support.append(e('span','▥'),'Simultaneous support resource');lg.append(support)}
   if(Number.isInteger(replanningClock)){const fixed=e('span',undefined,'legend-item');fixed.append(e('span','▣'),'Started/locked operations');lg.append(fixed)}
 }
@@ -393,6 +430,7 @@ async function boot(){
     }
   } catch (error) { /* Local fallback retains documented 60-second cap. */ }
   $('applyOutage').addEventListener('click',applyOutage);
+  $('applyShift').addEventListener('click',applyShift);
   $('rescheduleButton').addEventListener('click',rollingReplan);
   $('enterpriseWorkbookImport').addEventListener('click',importEnterpriseWorkbook);
   $('enterpriseImport').addEventListener('click',importEnterpriseFiles);$('exportBiButton').addEventListener('click',exportBi);
