@@ -1,4 +1,4 @@
--- Reproducible relational reporting examples for the KORDEN BI bridge.
+-- Reproducible relational reporting examples for the OPTERA BI bridge.
 -- Always filter or group by experiment_id AND time_unit; never sum minutes + hours.
 
 -- 1. Scenario KPI comparison: what changed from baseline to optimized schedule?

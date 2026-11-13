@@ -5,10 +5,10 @@ Usage: python public_benchmark.py --instance ft06 --time-limit 20
 import argparse
 import json
 from pathlib import Path
-from korden.public_benchmarks import PUBLIC_INSTANCES, load_jsplib
-from korden.baseline import POLICIES, dispatch
-from korden.evaluation import evaluate, check_schedule
-from korden.optimizer import optimize
+from optera.public_benchmarks import PUBLIC_INSTANCES, load_jsplib
+from optera.baseline import POLICIES, dispatch
+from optera.evaluation import evaluate, check_schedule
+from optera.optimizer import optimize
 
 
 def evaluate_public(name: str, time_limit: float) -> dict:

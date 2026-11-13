@@ -9,11 +9,11 @@ import csv
 import json
 from pathlib import Path
 from statistics import mean
-from korden.generator import generate_factory
-from korden.optimizer import optimize
-from korden.evaluation import check_schedule, evaluate
-from korden.baseline import dispatch
-from korden.reschedule import reschedule
+from optera.generator import generate_factory
+from optera.optimizer import optimize
+from optera.evaluation import check_schedule, evaluate
+from optera.baseline import dispatch
+from optera.reschedule import reschedule
 
 
 def run_disruption_lab(count: int = 20, start_seed: int = 300,

@@ -6,9 +6,9 @@ are solved with the same MILP engine to avoid conflating solver and policy.
 from __future__ import annotations
 import argparse, csv, json, random
 from pathlib import Path
-from korden.model import validate_scenario
-from korden.optimizer import optimize
-from korden.evaluation import evaluate
+from optera.model import validate_scenario
+from optera.optimizer import optimize
+from optera.evaluation import evaluate
 
 
 def staffing_instance(seed: int) -> tuple[dict,dict]:

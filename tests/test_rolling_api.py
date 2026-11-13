@@ -1,8 +1,8 @@
 """HTTP integration and public-demo isolation for disruption replay."""
 from pathlib import Path
 from fastapi.testclient import TestClient
-import korden.api as module
-from korden.service import compare
+import optera.api as module
+from optera.service import compare
 
 client=TestClient(module.app)
 
@@ -19,7 +19,7 @@ def request_body():
 
 
 def test_rolling_api_saves_validated_replay_locally(tmp_path, monkeypatch):
-    monkeypatch.setenv('KORDEN_DATA_DIR',str(tmp_path))
+    monkeypatch.setenv('OPTERA_DATA_DIR',str(tmp_path))
     monkeypatch.setattr(module,'PUBLIC_DEMO',False)
     r=client.post('/api/reschedule',json=request_body())
     assert r.status_code==200, r.text

@@ -15,6 +15,7 @@ class Task:
     machines: tuple[str, ...]
     support_resources: tuple[str, ...] = ()
     support_options: tuple[str, ...] = ()
+    setup_family: str | None = None
 
 
 def validate_scenario(data: dict) -> dict:
@@ -31,6 +32,7 @@ def validate_scenario(data: dict) -> dict:
         raise ValueError("Provide between 1 and 30 jobs")
     ids = set()
     downtime = {}
+    changeover = {}
     for m in machines:
         if not isinstance(m, dict) or not isinstance(m.get("id"), str) or not m["id"].strip():
             raise ValueError("Every machine needs a non-empty id")
@@ -38,6 +40,10 @@ def validate_scenario(data: dict) -> dict:
         if mid in ids:
             raise ValueError(f"Duplicate machine: {mid}")
         ids.add(mid)
+        setup = m.get("changeover_time", 0)
+        if type(setup) is not int or not 0 <= setup <= 120:
+            raise ValueError(f"Machine {mid}: changeover_time must be an integer 0–120")
+        changeover[mid] = setup
         windows = m.get("downtime", [])
         if not isinstance(windows, list):
             raise ValueError(f"Invalid downtime for {mid}")
@@ -86,6 +92,11 @@ def validate_scenario(data: dict) -> dict:
                     any(not isinstance(mid, str) or mid not in ids for mid in eligible) or
                     len(set(eligible)) != len(eligible)):
                 raise ValueError(f"Job {jid}/{op['id']}: machines must be valid unique machine IDs")
+            family = op.get('setup_family')
+            if family is not None and (not isinstance(family, str) or not family.strip() or len(family) > 40):
+                raise ValueError(f"Job {jid}/{op['id']}: setup_family must be a non-empty string (max 40)")
+            if family is None and any(changeover[mid] for mid in eligible):
+                raise ValueError(f"Job {jid}/{op['id']}: setup_family required on changeover-enabled machines")
             supports = op.get('support_resources', [])
             if (not isinstance(supports, list) or
                     any(not isinstance(r, str) or r not in ids for r in supports) or
@@ -111,7 +122,8 @@ def all_tasks(data: dict) -> list[Task]:
         for idx, op in enumerate(job["operations"]):
             tasks.append(Task(f"{job['id']}::{idx}", job["id"], op["id"], idx,
                               op["duration"], tuple(op["machines"]),
-                              tuple(op.get("support_resources", [])), tuple(op.get("support_options", []))))
+                              tuple(op.get("support_resources", [])), tuple(op.get("support_options", [])),
+                              op.get('setup_family')))
     return tasks
 
 
@@ -120,9 +132,23 @@ def downtime_by_machine(data: dict) -> dict[str, list[tuple[int, int]]]:
             for m in data["machines"]}
 
 
+def changeover_by_machine(data: dict) -> dict[str, int]:
+    return {m['id']: m.get('changeover_time', 0) for m in data['machines']}
+
+
+def changeover_gap(family_before: str | None, family_after: str | None, setup_time: int) -> int:
+    # Uniform family-switch penalty obeys triangle inequality, so pairwise MILP
+    # non-overlap constraints are equivalent to consecutive changeovers.
+    return setup_time if setup_time and family_before != family_after else 0
+
+
 def horizon(data: dict) -> int:
     total_duration = sum(t.duration for t in all_tasks(data))
     max_anchor = max([j["release"] for j in data["jobs"]] +
                      [w["end"] for m in data["machines"] for w in m.get("downtime", [])] + [0])
     # Valid upper bound: all tasks can run in sequence after every release and outage ends.
-    return max_anchor + total_duration + 1
+    tasks = all_tasks(data)
+    max_setup = max(changeover_by_machine(data).values(), default=0)
+    # A serial schedule is always a valid time upper bound, including every
+    # possible switch between consecutive operations.
+    return max_anchor + total_duration + max(0, len(tasks) - 1) * max_setup + 1

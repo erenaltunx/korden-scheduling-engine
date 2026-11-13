@@ -25,6 +25,6 @@
 
 ## Example CV bullet — only after GitHub CI is green
 
-> Engineered KORDEN, a cross-industry scheduling platform integrating Python/SciPy MILP optimization, capability-based workforce assignment, FastAPI, structured CSV ingestion and SQLite/SQL reporting. Across 24 reproducible synthetic staffing scenarios (144 jobs), reduced weighted tardiness 33.3% relative to a fixed-roster policy, with optimal solutions verified for both models across all instances.
+> Engineered OPTERA, a cross-industry scheduling platform integrating Python/SciPy MILP optimization, capability-based workforce assignment, FastAPI, structured CSV ingestion and SQLite/SQL reporting. Across 24 reproducible synthetic staffing scenarios (144 jobs), reduced weighted tardiness 33.3% relative to a fixed-roster policy, with optimal solutions verified for both models across all instances.
 
 **Must not claim:** live SAP integration, real cost savings, production deployment, advanced Power BI/DAX proficiency, industrial-scale optimization, or ERP administrator experience. Those require separate demonstrable work.

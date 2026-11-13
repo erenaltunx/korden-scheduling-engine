@@ -1,8 +1,10 @@
-# KORDEN vision — a cross-industry operations scheduling engine
+> Current primary business focus: **high-mix, low-volume manufacturing production cells**; see [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md). The cross-industry adapter is retained as a technical compatibility layer, not a promise of sector-wide deployability.
+
+# OPTERA vision — a cross-industry operations scheduling engine
 
 ## The problem and the product boundary
 
-Different industries share one operational problem: a finite set of **exclusive resources**, a queue of **work orders**, ordered **processing steps**, due times, competencies and periods when resources cannot be used. A spreadsheet or a dashboard can explain yesterday's bottleneck; KORDEN computes a candidate plan that satisfies the modeled constraints and quantifies tradeoffs versus transparent dispatching policies.
+Different industries share one operational problem: a finite set of **exclusive resources**, a queue of **work orders**, ordered **processing steps**, due times, competencies and periods when resources cannot be used. A spreadsheet or a dashboard can explain yesterday's bottleneck; OPTERA computes a candidate plan that satisfies the modeled constraints and quantifies tradeoffs versus transparent dispatching policies.
 
 **Core aspiration:** a decision operations platform with four separated layers:
 
@@ -11,7 +13,7 @@ Different industries share one operational problem: a finite set of **exclusive 
 3. **Solve / Simulate**: modular engines (HiGHS today, CP-SAT and large-scale methods later), reproducible baseline evaluations, rescheduling, robust plans and scenario stress tests.
 4. **Explain / Operate**: accessible configuration, Gantt, bottleneck explanations, experiments with immutable versions, approval-based export to downstream systems, incident recovery and audit trails.
 
-**KORDEN is not yet a production MES, WMS, dispatch platform or clinical scheduling system.** It does not autonomously write to operational systems. The domain-neutral adapter is a bounded, meaningful first step toward this vision—not evidence of complete industry support.
+**OPTERA is not yet a production MES, WMS, dispatch platform or clinical scheduling system.** It does not autonomously write to operational systems. The domain-neutral adapter is a bounded, meaningful first step toward this vision—not evidence of complete industry support.
 
 ## What version 0.6 actually models
 
@@ -24,7 +26,7 @@ Different industries share one operational problem: a finite set of **exclusive 
 
 ### Explicitly NOT modeled
 
-Automatic selection of the best alternative support team; variable-size teams; capacity >1 / batching; travel and routing; inventory/material availability; setup/changeover times; non-linear costs; cross-order dependency networks; timezone/DST calendars; probabilistic disruptions; fatigue; contractual/labor/regulatory rules; reservations of external third-party resources. If the input tries to specify an unknown constraint, the adapter **rejects the request**, instead of silently ignoring the rule and generating a deceptively feasible plan.
+Automatic selection of the best alternative support team; variable-size teams; capacity >1 / batching; travel and routing; inventory/material availability; arbitrary asymmetric changeover matrices (uniform primary-machine family switches supported in v0.9); non-linear costs; cross-order dependency networks; timezone/DST calendars; probabilistic disruptions; fatigue; contractual/labor/regulatory rules; reservations of external third-party resources. If the input tries to specify an unknown constraint, the adapter **rejects the request**, instead of silently ignoring the rule and generating a deceptively feasible plan.
 
 ## Scenarios and modeled resource capability
 

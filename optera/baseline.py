@@ -5,7 +5,8 @@ eligibility and machine downtime; only job priority changes.
 """
 from __future__ import annotations
 from fractions import Fraction
-from .model import downtime_by_machine, validate_scenario
+from .model import (downtime_by_machine, validate_scenario, changeover_by_machine,
+                    changeover_gap)
 
 POLICIES = {
     "edd": "Earliest Due Date (EDD)",
@@ -26,6 +27,24 @@ def earliest_slot(start: int, duration: int, busy: list[tuple[int, int]]) -> int
     return candidate
 
 
+def earliest_slot_with_changeover(start: int, duration: int, busy: list[tuple[int, int]],
+                                  prior_primary: list[tuple[int, int, str | None]],
+                                  family: str | None, setup_time: int) -> int:
+    """Find earliest feasible time, reserving switch gaps on the PRIMARY machine.
+
+    Already scheduled primary operations are inflated on both sides when their
+    setup family differs from the candidate. Support resources never trigger setup.
+    """
+    if not setup_time:
+        return earliest_slot(start, duration, busy)
+    blocked = busy + [
+        (a - changeover_gap(previous, family, setup_time),
+         b + changeover_gap(family, previous, setup_time))
+        for a, b, previous in prior_primary
+    ]
+    return earliest_slot(start, duration, blocked)
+
+
 def policy_priority(job: dict, policy: str) -> tuple:
     duration = sum(op["duration"] for op in job["operations"])
     if policy == "edd":
@@ -44,6 +63,8 @@ def dispatch(data: dict, policy: str = "edd") -> list[dict]:
     if policy not in POLICIES:
         raise ValueError(f"Unknown baseline policy {policy!r}; valid policies: {', '.join(POLICIES)}")
     occupied = downtime_by_machine(data)
+    primary_occupied = {mid: [] for mid in occupied}
+    setup_times = changeover_by_machine(data)
     jobs = sorted(data["jobs"], key=lambda j: policy_priority(j, policy))
     schedule = []
     for job in jobs:
@@ -55,7 +76,9 @@ def dispatch(data: dict, policy: str = "edd") -> list[dict]:
                     reserved = [*op.get('support_resources', []), *([choice] if choice else [])]
                     # All selected resources must be simultaneously available.
                     taken = occupied[machine] + [window for rid in reserved for window in occupied[rid]]
-                    start = earliest_slot(ready, op["duration"], taken)
+                    start = earliest_slot_with_changeover(
+                        ready, op["duration"], taken,
+                        primary_occupied[machine], op.get('setup_family'), setup_times[machine])
                     options.append((start + op["duration"], start, machine, choice or ''))
             end, start, machine, choice = min(options)
             reserved = [*op.get('support_resources', []), *([choice] if choice else [])]
@@ -67,6 +90,7 @@ def dispatch(data: dict, policy: str = "edd") -> list[dict]:
             schedule.append(row)
             for rid in [machine, *reserved]:
                 occupied[rid].append((start, end))
+            primary_occupied[machine].append((start, end, op.get('setup_family')))
             ready = end
     return sorted(schedule, key=lambda x: (x["start"], x["machine"], x["key"]))
 

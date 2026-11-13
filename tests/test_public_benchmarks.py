@@ -1,12 +1,12 @@
 """Published external instances: independent reference optimum, objective separation."""
 import pytest
 from fastapi.testclient import TestClient
-from korden.api import app
-from korden.public_benchmarks import load_jsplib, parse_jobshop
-from korden.baseline import dispatch
-from korden.evaluation import evaluate, check_schedule
-from korden.optimizer import optimize
-from korden.service import compare
+from optera.api import app
+from optera.public_benchmarks import load_jsplib, parse_jobshop
+from optera.baseline import dispatch
+from optera.evaluation import evaluate, check_schedule
+from optera.optimizer import optimize
+from optera.service import compare
 
 
 def test_ft06_reference_problem_reaches_published_optimum():

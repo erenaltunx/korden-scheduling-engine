@@ -1,4 +1,6 @@
-# KORDEN development roadmap
+> Current focused execution plan: [PRODUCT_ROADMAP.md](PRODUCT_ROADMAP.md). This document preserves earlier development history and long-term ideas.
+
+# OPTERA development roadmap
 
 ## Career positioning
 
@@ -30,7 +32,7 @@ The core evidence is not a dashboard screenshot but a **reproducible numerical i
 
 ## Foundation hardening (v0.3 — implemented locally)
 
-- [x] Complete KORDEN rebrand across code, frontend and runtime configuration.
+- [x] Complete OPTERA rebrand across code, frontend and runtime configuration.
 - [x] Versioned scenario input and fail-safe future-version rejection.
 - [x] Stable explicit solver registry, independent feasibility checker preserved.
 - [x] SQLite WAL experiment history, checksummed records and verified online backup.
@@ -57,7 +59,8 @@ The core evidence is not a dashboard screenshot but a **reproducible numerical i
 
 ## Milestone 3: factory realism (v0.4)
 
-- [ ] Sequence-dependent changeovers and setup times.
+- [x] Uniform, machine-specific family-switch penalties with MILP, baselines, independent validation and reproducible evidence (v0.9).
+- [ ] General asymmetric sequence-dependent matrices, sequence-aware staffing and explicit setup activities (future research).
 - [ ] Shift calendars, operator availability, overtime cost.
 - [ ] Multiple competing objectives with transparent weighting.
 - [ ] Import production orders from CSV and validate errors.

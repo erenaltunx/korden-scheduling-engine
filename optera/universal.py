@@ -72,7 +72,7 @@ def normalize_universal(scenario: dict) -> dict:
     compiled_resources = []
     for number, raw in enumerate(resources):
         loc = f'resources[{number}]'
-        r = _mapping(raw, loc, {'id', 'name', 'kind', 'capabilities', 'unavailable'})
+        r = _mapping(raw, loc, {'id', 'name', 'kind', 'capabilities', 'unavailable', 'changeover_time'})
         rid = _name(r, 'id', loc)
         _name(r, 'name', loc)
         _name(r, 'kind', loc)
@@ -92,7 +92,9 @@ def normalize_universal(scenario: dict) -> dict:
                 raise ValueError(f'{place} must end after it starts')
             blocked.append({'start': begin, 'end': end})
         known_resources[rid] = tags
-        compiled_resources.append({'id': rid, 'downtime': deepcopy(blocked)})
+        setup = _int(r, 'changeover_time', loc, 0, 120) if 'changeover_time' in r else 0
+        compiled_resources.append({'id': rid, 'downtime': deepcopy(blocked),
+                                   **({'changeover_time': setup} if setup else {})})
 
     known_orders: set[str] = set()
     compiled_orders = []
@@ -116,7 +118,7 @@ def normalize_universal(scenario: dict) -> dict:
         for j, raw_step in enumerate(steps):
             place = f'{loc}.steps[{j}]'
             step = _mapping(raw_step, place, {
-                'id', 'name', 'duration', 'requires_all', 'eligible_resources', 'reserve_resources', 'choose_one_support_from', 'choose_one_support_with'
+                'id', 'name', 'duration', 'requires_all', 'eligible_resources', 'reserve_resources', 'choose_one_support_from', 'choose_one_support_with', 'setup_family'
             })
             sid = _name(step, 'id', place)
             _name(step, 'name', place)
@@ -158,7 +160,13 @@ def normalize_universal(scenario: dict) -> dict:
                 raise ValueError(f'{place}.choose_one_support_from must be unique known resource IDs')
             if set(options) & (set(eligible) | set(reserved)):
                 raise ValueError(f'{place}.choose_one_support_from overlaps primary or reserved resources')
+            family = step.get('setup_family')
+            if family is not None:
+                family = _name(step, 'setup_family', place)
+                if len(family) > 40:
+                    raise ValueError(f'{place}.setup_family must not exceed 40 characters')
             compiled_steps.append({'id': sid, 'duration': duration, 'machines': eligible,
+                                   **({'setup_family': family} if family else {}),
                                    **({'support_resources': reserved} if reserved else {}),
                                    **({'support_options': options} if options else {})})
             step_count += 1
@@ -191,6 +199,6 @@ def describe_universal(scenario: dict) -> dict:
                         'integer time grid', 'fixed resource unavailability',
                         'weighted tardiness or makespan'],
         'unsupported': ['multiple independently selected support roles', 'variable-size teams', 'batch capacities',
-                        'travel times', 'sequence-dependent setup times',
+                        'travel times', 'arbitrary family-to-family setup matrices',
                         'materials/inventory', 'cross-order precedence', 'stochastic processing'],
     }

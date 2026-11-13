@@ -3,10 +3,10 @@ import json
 from copy import deepcopy
 from pathlib import Path
 import pytest
-from korden.evaluation import check_schedule
-from korden.service import compare
-from korden.reschedule import prepare_rolling, reschedule, rolling_dispatch
-from korden.whatif import add_outage
+from optera.evaluation import check_schedule
+from optera.service import compare
+from optera.reschedule import prepare_rolling, reschedule, rolling_dispatch
+from optera.whatif import add_outage
 
 ROOT = Path(__file__).resolve().parent.parent
 

@@ -1,7 +1,7 @@
 """Strict importer for the classic JSP text format used by JSPLIB.
 
 These benchmarks minimize Cmax (makespan), NOT tardiness. They are not
-interchangeable with KORDEN's original business-oriented tardiness benchmark.
+interchangeable with OPTERA's original business-oriented tardiness benchmark.
 """
 from __future__ import annotations
 from pathlib import Path

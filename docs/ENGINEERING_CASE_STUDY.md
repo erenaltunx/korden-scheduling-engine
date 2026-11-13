@@ -1,10 +1,10 @@
-# KORDEN v0.5 — Scheduling, rolling-horizon disruption handling, and external validation
+# OPTERA v0.5 — Scheduling, rolling-horizon disruption handling, and external validation
 
 **13 November 2026 · Reproducible engineering research prototype.**
 
 ## Problem statement
 
-Manufacturers must allocate precedence-constrained operations across scarce machines while respecting release times, maintenance closures, job due dates and non-preemptive execution. Frequent replanning is necessary, but previously started operations must not be rewritten. KORDEN treats these as explicit mathematical constraints and provides an independent feasibility certificate.
+Manufacturers must allocate precedence-constrained operations across scarce machines while respecting release times, maintenance closures, job due dates and non-preemptive execution. Frequent replanning is necessary, but previously started operations must not be rewritten. OPTERA treats these as explicit mathematical constraints and provides an independent feasibility certificate.
 
 ## Formulation and decision hierarchy
 
@@ -20,7 +20,7 @@ Five jobs, three operations per job, seeds 100–159. Strongest per-instance bas
 
 ## Experiment B — external, published benchmarks, v0.5
 
-| Public JSPLIB instance | Operations | Best classical heuristic Cmax | KORDEN Cmax | Published optimum Cmax | Solver optimum proven? | Time cap |
+| Public JSPLIB instance | Operations | Best classical heuristic Cmax | OPTERA Cmax | Published optimum Cmax | Solver optimum proven? | Time cap |
 |---|---:|---:|---:|---:|---|---:|
 | Fisher–Thompson FT06 | 36 | 71 | **55** | 55 | **Yes** | 15s |
 | Lawrence LA01 | 50 | 1078 | **666** | 666 | **No** | 15s |
@@ -40,7 +40,7 @@ Machine cap, job cap and operation count are limited by the current v0.5 impleme
 
 ## Experiment C — 20 rolling factory disruptions, v0.5
 
-Deterministic seeds 300–319, each with five orders and 15 operations. At simulated factory hour 4 a four-unit breakdown is added to CUT after any already-running CUT operation finishes (no unmodeled preemption). Baseline: feasible rolling EDD with exactly the same frozen operations and outage. KORDEN: MILP reoptimization with the same constraints.
+Deterministic seeds 300–319, each with five orders and 15 operations. At simulated factory hour 4 a four-unit breakdown is added to CUT after any already-running CUT operation finishes (no unmodeled preemption). Baseline: feasible rolling EDD with exactly the same frozen operations and outage. OPTERA: MILP reoptimization with the same constraints.
 
 - **20/20** solutions with model optimality proven at the test configuration.
 - **13** improving instances, **7** ties; none worsened against the rolling EDD baseline.

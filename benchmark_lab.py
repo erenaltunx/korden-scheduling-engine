@@ -9,10 +9,10 @@ import csv
 import json
 from pathlib import Path
 from statistics import mean, median
-from korden.baseline import POLICIES, dispatch
-from korden.evaluation import evaluate, check_schedule
-from korden.generator import generate_factory
-from korden.optimizer import optimize
+from optera.baseline import POLICIES, dispatch
+from optera.evaluation import evaluate, check_schedule
+from optera.generator import generate_factory
+from optera.optimizer import optimize
 
 
 def run_lab(count: int = 60, jobs: int = 5, time_limit: float = 2.0,
@@ -90,12 +90,12 @@ def run_lab(count: int = 60, jobs: int = 5, time_limit: float = 2.0,
 
 
 def main():
-    parser = argparse.ArgumentParser(description="KORDEN held-out four-policy scheduling benchmark")
+    parser = argparse.ArgumentParser(description="OPTERA held-out four-policy scheduling benchmark")
     parser.add_argument("--count", type=int, default=60)
     parser.add_argument("--jobs", type=int, default=5)
     parser.add_argument("--time-limit", type=float, default=2.0)
     parser.add_argument("--start-seed", type=int, default=100)
-    parser.add_argument("--out", default="artifacts/korden_lab")
+    parser.add_argument("--out", default="artifacts/optera_lab")
     args = parser.parse_args()
     try:
         report=run_lab(args.count,args.jobs,args.time_limit,args.start_seed)

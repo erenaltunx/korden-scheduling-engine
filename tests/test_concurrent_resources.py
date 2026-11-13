@@ -2,12 +2,12 @@
 from copy import deepcopy
 import pytest
 
-from korden.baseline import dispatch
-from korden.evaluation import check_schedule, evaluate
-from korden.model import validate_scenario
-from korden.optimizer import optimize
-from korden.universal import normalize_universal
-from korden.reschedule import prepare_rolling, rolling_dispatch
+from optera.baseline import dispatch
+from optera.evaluation import check_schedule, evaluate
+from optera.model import validate_scenario
+from optera.optimizer import optimize
+from optera.universal import normalize_universal
+from optera.reschedule import prepare_rolling, rolling_dispatch
 
 
 def double_resource_scenario():

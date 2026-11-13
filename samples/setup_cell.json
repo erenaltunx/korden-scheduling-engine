@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "factory_name": "High-Mix CNC Setup Demonstrator",
+  "machines": [{"id": "CNC_1", "downtime": [], "changeover_time": 4}],
+  "jobs": [
+    {"id":"A1","release":0,"due":3,"weight":1,"operations":[{"id":"mill","duration":2,"machines":["CNC_1"],"setup_family":"A"}]},
+    {"id":"B1","release":0,"due":4,"weight":1,"operations":[{"id":"mill","duration":2,"machines":["CNC_1"],"setup_family":"B"}]},
+    {"id":"A2","release":0,"due":5,"weight":1,"operations":[{"id":"mill","duration":2,"machines":["CNC_1"],"setup_family":"A"}]},
+    {"id":"B2","release":0,"due":6,"weight":1,"operations":[{"id":"mill","duration":2,"machines":["CNC_1"],"setup_family":"B"}]}
+  ]
+}

@@ -1,4 +1,4 @@
-# KORDEN Benchmark Lab — comparison against four competing policies
+# OPTERA Benchmark Lab — comparison against four competing policies
 
 ## Aim
 Test whether the scheduling optimizer outperforms the **best** classical baseline per instance, rather than a potentially weak single EDD policy. Results are on synthetic scheduling problems, not measured real-world savings.

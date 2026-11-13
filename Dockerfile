@@ -1,17 +1,17 @@
 FROM python:3.12.9-slim-bookworm
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    KORDEN_DATA_DIR=/data
+    OPTERA_DATA_DIR=/data
 WORKDIR /app
 COPY requirements.txt ./
 RUN python -m pip install --no-cache-dir -r requirements.txt && python -m pip check
-COPY korden/ ./korden/
+COPY optera/ ./optera/
 COPY static/ ./static/
 COPY samples/ ./samples/
 COPY benchmarks/ ./benchmarks/
-COPY run.py benchmark.py benchmark_suite.py benchmark_lab.py disruption_lab.py public_benchmark.py staffing_lab.py planning_workflow.py backup.py ./
+COPY run.py benchmark.py benchmark_suite.py benchmark_lab.py changeover_lab.py disruption_lab.py public_benchmark.py staffing_lab.py planning_workflow.py backup.py ./
 RUN mkdir -p /data
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=3)" || exit 1
-CMD ["uvicorn", "korden.api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+CMD ["uvicorn", "optera.api:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

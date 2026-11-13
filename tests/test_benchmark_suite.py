@@ -1,6 +1,6 @@
 """Benchmark generation and aggregation reproducibility checks."""
-from korden.generator import generate_factory
-from korden.model import validate_scenario
+from optera.generator import generate_factory
+from optera.model import validate_scenario
 from benchmark_suite import run_suite
 
 

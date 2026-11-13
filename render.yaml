@@ -1,13 +1,13 @@
 services:
   - type: web
-    name: korden-scheduling-engine
+    name: optera
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn korden.api:app --host 0.0.0.0 --port $PORT --workers 1
+    startCommand: uvicorn optera.api:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /api/health
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.9
-      - key: KORDEN_PUBLIC_DEMO
+      - key: OPTERA_PUBLIC_DEMO
         value: "1"

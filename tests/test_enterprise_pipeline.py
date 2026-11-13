@@ -6,11 +6,11 @@ import sqlite3
 from copy import deepcopy
 import pytest
 from fastapi.testclient import TestClient
-from korden.api import app
-from korden.data_pipeline import (load_planning_directory, import_planning_csv,
+from optera.api import app
+from optera.data_pipeline import (load_planning_directory, import_planning_csv,
     export_reporting, reporting_tables, make_csv)
-from korden.universal import normalize_universal
-from korden.service import compare
+from optera.universal import normalize_universal
+from optera.service import compare
 from staffing_lab import run_lab
 
 
@@ -137,7 +137,7 @@ def test_dynamic_staffing_benchmark_is_seeded_and_reproducible():
 
 @pytest.mark.parametrize('sector', ['manufacturing_flexible_crew','warehouse_flexible_crew'])
 def test_industry_csv_roundtrip_with_skill_pool_and_feasibility(sector):
-    from korden.evaluation import check_schedule
+    from optera.evaluation import check_schedule
     raw=load_planning_directory(ROOT/'samples'/'enterprise'/sector,name='Imported '+sector,
       industry='Manufacturing' if sector.startswith('manufacturing') else 'Warehouse',
       time_unit='hour' if sector.startswith('manufacturing') else 'minute')

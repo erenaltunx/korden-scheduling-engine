@@ -1,0 +1,13 @@
+{
+  "schema_version":1,
+  "name":"High-Mix CNC Setup Demonstrator",
+  "industry":"Discrete manufacturing",
+  "time_unit":"hour",
+  "resources":[{"id":"CNC_1","name":"CNC machining centre","kind":"cnc_machine","capabilities":["milling"],"changeover_time":4}],
+  "work_orders":[
+    {"id":"A1","name":"Component A, first batch","available_at":0,"due_at":3,"priority":1,"steps":[{"id":"mill","name":"Milling","duration":2,"requires_all":["milling"],"setup_family":"A"}]},
+    {"id":"B1","name":"Component B, first batch","available_at":0,"due_at":4,"priority":1,"steps":[{"id":"mill","name":"Milling","duration":2,"requires_all":["milling"],"setup_family":"B"}]},
+    {"id":"A2","name":"Component A, second batch","available_at":0,"due_at":5,"priority":1,"steps":[{"id":"mill","name":"Milling","duration":2,"requires_all":["milling"],"setup_family":"A"}]},
+    {"id":"B2","name":"Component B, second batch","available_at":0,"due_at":6,"priority":1,"steps":[{"id":"mill","name":"Milling","duration":2,"requires_all":["milling"],"setup_family":"B"}]}
+  ]
+}

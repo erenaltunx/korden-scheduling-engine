@@ -1,6 +1,6 @@
-# Contributing to KORDEN
+# Contributing to OPTERA
 
-KORDEN is an educational operations-research project. Contributions must retain
+OPTERA is an educational operations-research project. Contributions must retain
 transparent experimental reporting and independently validated schedules.
 
 1. Create a branch and make a narrowly scoped change.

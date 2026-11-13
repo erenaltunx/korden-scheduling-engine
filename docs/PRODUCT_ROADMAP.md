@@ -1,0 +1,35 @@
+# Optera — focused engineering product roadmap
+
+**Product thesis:** reliable, explainable finite-capacity scheduling and disruption recovery **for high-mix, low-volume manufacturing cells**.
+
+**Buyer/decision maker:** production planning lead or manufacturing engineering manager. **Operator:** scheduler/production planner. **Measured value:** weighted order lateness, late orders, makespan, modeled changeovers and schedule stability, measured against the strongest eligible manual heuristic. **Not** an AI chat assistant, a generic ERP, or a broad industrial platform.
+
+## Hard boundaries (protect deep specialization)
+
+- Domain: job-shop and flexible job-shop scheduling on machining/fabrication cells, under finite machine and qualified-worker capacity.
+- Secondary demos for service and warehousing stay regression fixtures; no additional sector marketing until manufacturing quality gates pass.
+- Any new constraint must be represented in the **data contract, baseline, mathematical optimizer, independent verifier, negative tests and UI** before being called supported.
+- A fast but unproven feasible solution is reported as *feasible, not optimal*. No silent fallback claims.
+- Reproducibility, explicit units and retained datasets precede favorable marketing numbers.
+
+## Iterative plan — milestones and acceptance criteria
+
+| Gate | Engineering deliverable | Objective acceptance criteria | State |
+|---|---|---|---|
+| P0 | Stable engine, reproducible baseline and CI | Original cases unchanged; independent constraint checks; Windows/Linux and Docker CI | Implemented; online validation depends on current branch |
+| P1 | **Uniform sequence-dependent setup allowance** (v0.9) | Exact MILP + four heuristics + rolling replay + verifier; negative tests, one brute-force case, 20 fixed-seed cases and artifact export | Implemented locally; GitHub promotion pending |
+| P2 | **Shift calendars and labor feasibility** | Prevent work across closed shifts; strict cross-midnight/DST assumptions; show two independently verified schedules | Planned |
+| P3 | **Robust disruption recovery** | Freeze started work; new machine outage and urgent order; compare tardiness vs plan disturbance using epsilon-constraint; no hidden rule violations | Partial rolling implementation, more evidence required |
+| P4 | **Scaling & two-solver research** | CP-SAT alternative, 20–100 heterogeneous public job-shop benchmarks, wall-clock/optimality-gap percentiles, memory and CPU budget | Planned |
+| P5 | **Production-planner UX & integration** | Guided XLSX/CSV import, field-level validation, Gantt changeover markers, publishable setup summary, no manual JSON required; externally verified live sandbox | Partial import; hosted demo unverified |
+| P6 | **Controlled real pilot** | Permissioned, anonymized order data; baseline operations and independent follow-up measures; written limitations and operator evaluation | Not started |
+
+## Engineering maturity score (not a recruitment score)
+
+Weighted rubric with evidence required to move above 75: mathematical fidelity **25**; benchmark validity and scalability **20**; end-to-end planner usability **15**; real manufacturing constraint coverage **15**; automated reliability and recovery **15**; field validation and rollout **10**. High scores are blocked by lack of real pilot, shift calendars and missing live demonstration even if synthetic optimization results improve.
+
+Initial score: **53/100**. A new local feature alone does not justify raising the published score; publish, verify CI and compare against rubric first.
+
+## Future study and learning loop
+
+Each completed gate adds: (1) model assumptions, (2) counterexample that fails without the feature, (3) reproducible benchmark with at least one unflattering case, (4) new risk/limitation, (5) next bottleneck ranked by industrial impact. If a gate exposes an unexpected issue, adjust the order and record the reason. The project never chooses breadth over finite-capacity manufacturing scheduling correctness.

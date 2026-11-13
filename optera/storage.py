@@ -22,8 +22,21 @@ class StorageVersionError(RuntimeError):
 
 
 def default_data_dir() -> Path:
-    configured = os.getenv("KORDEN_DATA_DIR")
-    return Path(configured).expanduser() if configured else Path.home() / ".korden"
+    """Keep existing archives readable during a non-destructive product rename.
+
+    Explicit OPTERA_DATA_DIR always wins. A legacy environment override remains
+    supported for existing deployments. With no override, an existing legacy
+    SQLite archive is used rather than silently creating an empty new archive.
+    No files are moved, overwritten or merged automatically.
+    """
+    configured = os.getenv("OPTERA_DATA_DIR") or os.getenv("KORDEN_DATA_DIR")
+    if configured:
+        return Path(configured).expanduser()
+    current = Path.home() / ".optera"
+    legacy = Path.home() / ".korden"
+    if not (current / "experiments.sqlite3").exists() and (legacy / "experiments.sqlite3").is_file():
+        return legacy
+    return current
 
 
 def canonical_json(data: object) -> str:

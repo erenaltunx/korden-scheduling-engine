@@ -1,10 +1,10 @@
 {
-  "name": "KORDEN Optimization Lab",
+  "name": "OPTERA Optimization Lab",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.12-bookworm",
   "postCreateCommand": "python -m pip install -r requirements.txt",
   "forwardPorts": [8000],
   "portsAttributes": {
-    "8000": {"label": "KORDEN Web App", "onAutoForward": "openBrowser"}
+    "8000": {"label": "OPTERA Web App", "onAutoForward": "openBrowser"}
   },
   "postStartCommand": "bash .devcontainer/start.sh"
 }

@@ -1,14 +1,39 @@
-# KORDEN — Industrial Scheduling & Optimization Engine
+# Optera — Finite-Capacity Production Scheduling & Recovery
 
 **Plan smarter. Produce better.**
 
-KORDEN is an independent, local-first **cross-industry operations research** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
+OPTERA is an independent, local-first **cross-industry operations research** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
-**Version:** 0.8.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+**Version:** 0.9.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+
+## Product focus: high-mix, low-volume production cells
+
+**Target operator:** a production planner managing changing customer orders on a small CNC/fabrication/machining cell (not an entire factory ERP system). Optera answers: **Which jobs should run on which qualified resources and in what order, while respecting real machine availability, product-family changeovers, and firm in-progress commitments?**
+
+- **Inputs:** orders/step precedence, due times, machine eligibility, qualified support personnel, machine downtime, *uniform product-family switch time* (optional).
+- **Outputs:** independently validated finite-capacity Gantt schedule, weighted order lateness, changeovers, setup time, solver proof/gap, disruption-aware revised plan.
+- **Pilot boundary:** at most 12 resources / 65 operations, integer-hour/minute grids. No live MES connection, large-scale shift calendars, material constraints, real savings or authenticated multi-user workflows. 
+- **Secondary workflows:** the existing universal data adapters and service/warehouse templates remain for compatibility, not primary product marketing.
+
+**Version 0.9** models machine-specific *uniform family-change penalties*: switching from family A to B (or B to A) consumes a fixed time allowance on the primary machine; staying within a family adds none. This is a **minimum separation constraint**, not a time-stamped setup activity. It does **not** support arbitrary asymmetric family-to-family matrices, setup workers, or preventive material checks. Unsupported rules must never be silently assumed.
+
+### Reproducible high-mix benchmark
+
+Run `python changeover_lab.py --count 20 --start-seed 20261113 --time-limit 2 --out artifacts/hmlv_changeovers`.
+
+| 20 synthetic high-mix production cells | Strongest of EDD/FIFO/SPT/WSPT | Optera MILP/HiGHS |
+|---|---:|---:|
+| Aggregate weighted tardiness | 455 | 327 |
+| Total modeled setup allowance | 135 | 97 |
+| Scenarios with mathematical proof | — | 20 of 20 |
+
+Weighted tardiness fell **28.13%** in this synthetic, explicitly bounded experiment. The optimizer targets weighted tardiness, *not* setup cost: reduced setup time is a secondary observation in this sample, not a general guarantee. These are not production savings. Full per-instance evidence and deterministic input hash are under `docs/benchmarks/hmlv_changeover_v1.*`. The demonstration scenario is `samples/setup_cell.json`, with a guided-editable version in `samples/universal/setup_cell.json`.
+
+See [focused engineering roadmap](docs/PRODUCT_ROADMAP.md) for acceptance gates and maturity scoring.
 
 ## Cross-industry resource studio (v0.6)
 
-KORDEN now supports an explicit **universal resource / capability / workflow contract**. Use the **Cross-Industry Resource Studio** in the web UI to choose a manufacturing, field-service or warehouse workflow, edit due times/priorities and block resource availability without hand-writing JSON. The sector-specific data is validated and compiled into the *same* tested MILP/HiGHS engine; all existing factory scenarios continue working.
+OPTERA now supports an explicit **universal resource / capability / workflow contract**. Use the **Cross-Industry Resource Studio** in the web UI to choose a manufacturing, field-service or warehouse workflow, edit due times/priorities and block resource availability without hand-writing JSON. The sector-specific data is validated and compiled into the *same* tested MILP/HiGHS engine; all existing factory scenarios continue working.
 
 The v1 domain supports **one capability-matched primary resource plus optional fixed simultaneous supporting resources per sequential step** (for example CNC machine + operator), integer minutes or hours and fixed unavailability. It intentionally rejects unknown or unsupported constraints: it does **not** solve *automatic selection of substitute support staff*, driving routes, inventories, setup times or complex calendars yet. This is a decision-engine foundation, **not** a complete production operations system. See [vision, actual scope and architecture](docs/VISION_AND_DOMAIN_CONTRACT.md).
 
@@ -24,7 +49,7 @@ The three fictional sector scenarios now reserve simultaneous support resources 
 
 Go to **GitHub repository → Code → Codespaces → Create codespace**. Its preconfigured development container installs dependencies, starts the application and forwards port **8000**. Open the forwarded port to use the application. Hosted demonstration can be deployed via `render.yaml` separately; GitHub Pages cannot execute the Python solver.
 
-The public Render demo sets `KORDEN_PUBLIC_DEMO=1`: stricter solver limits, **no persistence**, and no private experiment history. It is intended for synthetic test data only.
+The public Render demo sets `OPTERA_PUBLIC_DEMO=1`: stricter solver limits, **no persistence**, and no private experiment history. It is intended for synthetic test data only.
 
 ## Local development (optional)
 
@@ -35,7 +60,7 @@ python -m pip install -r requirements.txt
 python run.py
 ```
 
-Open http://127.0.0.1:8000. On Windows `launch_windows.bat` can also start the app. For Docker users, `docker compose up --build` starts the app and persists saved experiments in the `korden-data` volume. The web interface is accessible at http://localhost:8000.
+Open http://127.0.0.1:8000. On Windows `launch_windows.bat` can also start the app. For Docker users, `docker compose up --build` starts the app and persists saved experiments in the `optera-data` volume. The web interface is accessible at http://localhost:8000.
 
 ## v0.8 — Dynamic staffing and enterprise data bridge
 
@@ -87,7 +112,7 @@ All per-seed results, methodology, exact commands and checksum are published in 
 
 **Two distinct objectives:** weighted job tardiness for business service levels, and makespan for classical job-shop research. The math must use the same objective as its reference benchmark. The new `/api/reschedule` freezes finished/in-progress non-preemptive work at a simulated planning clock, rejects outages that intersect ongoing tasks, and optimizes only work that has not started. The UI supports rolling replan after an initial run. Schedule stability (changed future tasks, machine switches, total start shift) is measured, **not yet an optimization objective**.
 
-**External benchmark:** JSPLIB `ft06` (36 operations): KORDEN finds **55** vs. 71 from the strongest classical rule, and proves model optimality; published optimum = 55. JSPLIB `la01` (50 operations): **666** vs. 1078 heuristic, matching the published optimum of 666 but **not proving it within 15 seconds**. These are *arbitrary benchmark time units*, not factory hours. Benchmarks in `benchmarks/jsplib/`, results under `docs/benchmarks/`.
+**External benchmark:** JSPLIB `ft06` (36 operations): OPTERA finds **55** vs. 71 from the strongest classical rule, and proves model optimality; published optimum = 55. JSPLIB `la01` (50 operations): **666** vs. 1078 heuristic, matching the published optimum of 666 but **not proving it within 15 seconds**. These are *arbitrary benchmark time units*, not factory hours. Benchmarks in `benchmarks/jsplib/`, results under `docs/benchmarks/`.
 
 **20 rolling disruption trials:** 20 synthetic small workshops, aggregate weighted tardiness **833 → 563 (32.41%)** vs feasible rolling EDD, with 20/20 solver proofs. This is simulated research, not claimed production savings. Disruption changes many future tasks; plan stability requires future engineering improvements.
 
@@ -110,12 +135,12 @@ Read the [engineering case study](docs/ENGINEERING_CASE_STUDY.md) for assumption
 
 ## How to keep your work safe
 
-Source code and experiment data are separate. GitHub stores **source**, while experiment history is saved locally at `~/.korden/experiments.sqlite3` or `KORDEN_DATA_DIR`; databases, secrets and personal inputs are intentionally excluded from Git commits. Public demos **do not** retain history.
+Source code and experiment data are separate. GitHub stores **source**, while experiment history is saved locally at `~/.optera/experiments.sqlite3` or `OPTERA_DATA_DIR` (old archives remain readable, see [migration notes](docs/REBRAND_AND_DATA_MIGRATION.md)); databases, secrets and personal inputs are intentionally excluded from Git commits. Public demos **do not** retain history.
 
 Create a verified SQLite backup to a new file:
 
 ```bash
-python backup.py --out ~/korden-backups/korden-2026-11-13.sqlite3
+python backup.py --out ~/optera-backups/optera-2026-11-13.sqlite3
 ```
 
 Keep an additional copy on another drive and test restore procedures. Follow [`docs/RECOVERY.md`](docs/RECOVERY.md). Docker `compose.yaml` uses a persistent named volume, but volumes alone are not backups.
@@ -133,7 +158,7 @@ Keep an additional copy on another drive and test restore procedures. Follow [`d
 ## Project layout
 
 ```text
-korden/         optimization, validation, orchestration, archive, API
+optera/         optimization, validation, orchestration, archive, API
 static/         browser client and Gantt UI
 samples/        synthetic scenario definitions (schema v1)
 tests/          functional, regression, data safety and API tests
@@ -145,4 +170,4 @@ benchmark*.py   reproducible research scripts
 backup.py       SQLite online backup utility
 ```
 
-**Repository target:** `erenaltunx/korden-scheduling-engine`. Do not assume GitHub publication or hosted deployment is complete until verified.
+**Repository:** `erenaltunx/optera` after the GitHub repository is renamed in Settings. Application rename and repository slug rename are separate steps. See [migration notes](docs/REBRAND_AND_DATA_MIGRATION.md).
