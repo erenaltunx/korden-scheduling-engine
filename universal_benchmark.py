@@ -10,10 +10,10 @@ import json
 from pathlib import Path
 from time import perf_counter
 
-from korden.baseline import POLICIES, dispatch
-from korden.evaluation import evaluate, check_schedule
-from korden.engines import optimize_with
-from korden.universal import normalize_universal, describe_universal
+from optera.baseline import POLICIES, dispatch
+from optera.evaluation import evaluate, check_schedule
+from optera.engines import optimize_with
+from optera.universal import normalize_universal, describe_universal
 
 ROOT = Path(__file__).resolve().parent
 
@@ -74,7 +74,7 @@ def run(names: list[str], limit: float, output: Path,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='KORDEN cross-industry model regression')
+    parser = argparse.ArgumentParser(description='OPTERA cross-industry model regression')
     parser.add_argument('--limit', type=float, default=8.0)
     parser.add_argument('--out', type=Path, default=Path('artifacts/universal_sectors'))
     parser.add_argument('--dataset-dir', type=Path, default=None,

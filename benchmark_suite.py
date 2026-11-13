@@ -5,8 +5,8 @@ import csv
 import json
 from pathlib import Path
 from statistics import mean, median
-from korden.generator import generate_factory
-from korden.service import compare
+from optera.generator import generate_factory
+from optera.service import compare
 
 
 def run_suite(count: int, jobs: int, time_limit: float):
@@ -46,7 +46,7 @@ def run_suite(count: int, jobs: int, time_limit: float):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='KORDEN reproducible multi-instance benchmark')
+    parser = argparse.ArgumentParser(description='OPTERA reproducible multi-instance benchmark')
     parser.add_argument('--count', type=int, default=20, help='number of integer seeds starting at zero')
     parser.add_argument('--jobs', type=int, default=5)
     parser.add_argument('--time-limit', type=float, default=3)

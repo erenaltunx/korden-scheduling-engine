@@ -3,11 +3,11 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
-from korden.service import compare
+from optera.service import compare
 
 
 def main():
-    p = argparse.ArgumentParser(description="KORDEN: EDD vs. MILP benchmark")
+    p = argparse.ArgumentParser(description="OPTERA: EDD vs. MILP benchmark")
     p.add_argument("scenario", nargs="?", default="samples/assembly_cell.json")
     p.add_argument("--time-limit", type=float, default=10)
     p.add_argument("--out", help="Optional JSON results path")

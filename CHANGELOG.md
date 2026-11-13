@@ -1,3 +1,10 @@
+## v0.9.0 — Production cell setup/changeover modeling (2026-11-13)
+- Narrowed primary product focus to high-mix, low-volume manufacturing finite-capacity scheduling.
+- Added uniform product-family changeover time to the validated scenario contract and portable adapter.
+- Implemented identical machine setup constraints in MILP, classical baselines, rolling replanning and independent checker; expanded worst-case horizon.
+- Added reproducible 20-instance research lab, 13 new regression/negative/property tests, interactive setup controls and modeled setup KPI.
+- No claim of asymmetric setup matrices, setup crew reservations, live production savings or industrial rollout.
+
 ## v0.8.0 — Capability-based staff assignment + SQL/CSV business integration (2026-11-13)
 - Choose one qualified worker from a capability pool in the MILP itself, without double booking or forgetting existing fixed supports; baselines and rolling replay updated.
 - Added skill selector to universal v1 contract (additive, backwards-compatible), explicit validation and eight new staff-choice tests.
@@ -24,9 +31,9 @@
 
 # Changelog
 
-## v0.3.0 — KORDEN architecture & data-safety baseline (2026-11-13)
+## v0.3.0 — OPTERA architecture & data-safety baseline (2026-11-13)
 
-- Renamed the product and Python package consistently to KORDEN; previous prototype source preserved separately.
+- Renamed the product and Python package consistently to OPTERA; previous prototype source preserved separately.
 - Added explicit optimizer registry and backward-compatible scenario schema version 1.
 - Added durable local SQLite experiment history, checksums, online consistent backups, version guard and history API/UI.
 - Public demo does not store or expose private run history; solver concurrency and request-size controls added.

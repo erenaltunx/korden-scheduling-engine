@@ -6,10 +6,10 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from korden.api import app
-from korden.universal import describe_universal, normalize_universal
-from korden.service import compare
-from korden.evaluation import check_schedule
+from optera.api import app
+from optera.universal import describe_universal, normalize_universal
+from optera.service import compare
+from optera.evaluation import check_schedule
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -91,7 +91,7 @@ def test_eligible_resource_must_exist():
 
 
 def test_http_template_validation_and_run(tmp_path, monkeypatch):
-    monkeypatch.setenv('KORDEN_DATA_DIR', str(tmp_path))
+    monkeypatch.setenv('OPTERA_DATA_DIR', str(tmp_path))
     client = TestClient(app)
     r = client.get('/api/universal/templates')
     assert r.status_code == 200
@@ -128,7 +128,7 @@ def test_batch_cross_industry_benchmark(tmp_path):
 
 
 def test_legacy_scenario_version_is_unchanged():
-    from korden.service import compare
+    from optera.service import compare
     example = json.loads((ROOT / 'samples' / 'assembly_cell.json').read_text())
     result = compare(example, 5)
     assert result['optimized']['metrics']['weighted_tardiness'] == 15
@@ -136,7 +136,7 @@ def test_legacy_scenario_version_is_unchanged():
 
 
 def test_public_cross_industry_run_has_no_history(monkeypatch):
-    import korden.api as api
+    import optera.api as api
     monkeypatch.setattr(api, 'PUBLIC_DEMO', True)
     client = TestClient(app)
     source = template('manufacturing')
@@ -149,7 +149,7 @@ def test_public_cross_industry_run_has_no_history(monkeypatch):
 
 
 def test_public_cross_industry_limits_are_enforced(monkeypatch):
-    import korden.api as api
+    import optera.api as api
     monkeypatch.setattr(api, 'PUBLIC_DEMO', True)
     client = TestClient(app)
     source = template('warehouse')

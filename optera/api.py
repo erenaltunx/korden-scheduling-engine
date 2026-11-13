@@ -1,4 +1,4 @@
-"""KORDEN HTTP adapter: core solver is imported, but never coupled to HTTP or DB."""
+"""OPTERA HTTP adapter: core solver is imported, but never coupled to HTTP or DB."""
 from __future__ import annotations
 import json
 import os
@@ -20,11 +20,11 @@ from .data_pipeline import import_planning_csv, reporting_tables, make_csv, REPO
 from .storage import get_experiment, list_experiments, save_experiment
 
 ROOT = Path(__file__).resolve().parent.parent
-PUBLIC_DEMO = os.getenv("KORDEN_PUBLIC_DEMO", "0").lower() in {"1", "true", "yes"}
+PUBLIC_DEMO = os.getenv("OPTERA_PUBLIC_DEMO", "0").lower() in {"1", "true", "yes"}
 # Public demo is not multi-tenant: it must NEVER expose or persist private experiments.
 MAX_REQUEST_BYTES = 128 * 1024
 PUBLIC_SOLVER_SLOTS = BoundedSemaphore(value=2)
-app = FastAPI(title="KORDEN — Cross-Industry Resource Optimization", version="0.8.0")
+app = FastAPI(title="OPTERA — Cross-Industry Resource Optimization", version="0.9.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
@@ -62,6 +62,8 @@ class RescheduleRequest(BaseModel):
     time_limit: float = Field(default=8.0, ge=0.5, le=60)
     baseline_policy: Literal["edd", "fifo", "spt", "wspt"] = "edd"
     objective: Literal["weighted_tardiness", "makespan"] = "weighted_tardiness"
+    stability_policy: Literal["off", "preserve"] = "off"
+    max_added_tardiness: int = Field(default=0, ge=0, le=100)
 
 
 def public_solver_check(scenario: dict, time_limit: float):
@@ -111,7 +113,7 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "application": "KORDEN", "version": "0.8.0"}
+    return {"status": "ok", "application": "OPTERA", "version": "0.9.0"}
 
 
 @app.get("/api/config")
@@ -185,7 +187,8 @@ def run_rolling_reschedule(payload: RescheduleRequest):
         try:
             output = reschedule(payload.scenario, payload.prior_schedule, payload.now,
                                 payload.machine_id, payload.outage_start, payload.outage_end,
-                                payload.time_limit, payload.baseline_policy, payload.objective)
+                                payload.time_limit, payload.baseline_policy, payload.objective,
+                                payload.stability_policy, payload.max_added_tardiness)
         except ValueError as error:
             raise HTTPException(status_code=422, detail=str(error)) from error
         if PUBLIC_DEMO:
@@ -289,7 +292,7 @@ def enterprise_export_bi(payload: BIExportRequest):
                 z.writestr(f'{name}.csv',make_csv(rows,REPORT_COLUMNS[name]))
         archive.seek(0)
         return StreamingResponse(archive,media_type='application/zip',headers={
-            'Content-Disposition':'attachment; filename="korden-bi-export.zip"',
+            'Content-Disposition':'attachment; filename="optera-bi-export.zip"',
             'Cache-Control':'no-store'})
     except ValueError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error

@@ -6,12 +6,12 @@ import sqlite3
 from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
-from korden.model import validate_scenario
-from korden.service import compare
-from korden.storage import (
+from optera.model import validate_scenario
+from optera.service import compare
+from optera.storage import (
     StorageVersionError, backup_database, connect, get_experiment, list_experiments, save_experiment,
 )
-import korden.api as api
+import optera.api as api
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -61,7 +61,7 @@ def test_future_database_version_blocks_old_application(tmp_path):
 
 def test_public_demo_never_archives_or_exposes_history(tmp_path, monkeypatch):
     monkeypatch.setattr(api, "PUBLIC_DEMO", True)
-    monkeypatch.setenv("KORDEN_DATA_DIR", str(tmp_path / "no-storage"))
+    monkeypatch.setenv("OPTERA_DATA_DIR", str(tmp_path / "no-storage"))
     client = TestClient(api.app)
     result = client.post("/api/run", json={"scenario": example(), "time_limit": 2})
     assert result.status_code == 200
@@ -73,7 +73,7 @@ def test_public_demo_never_archives_or_exposes_history(tmp_path, monkeypatch):
 
 def test_local_api_keeps_run_history(tmp_path, monkeypatch):
     monkeypatch.setattr(api, "PUBLIC_DEMO", False)
-    monkeypatch.setenv("KORDEN_DATA_DIR", str(tmp_path))
+    monkeypatch.setenv("OPTERA_DATA_DIR", str(tmp_path))
     client = TestClient(api.app)
     response = client.post("/api/run", json={"scenario": example(), "time_limit": 3})
     assert response.status_code == 200
@@ -91,3 +91,28 @@ def test_request_size_limit_and_web_security_headers():
     page = client.get("/")
     assert "Content-Security-Policy" in page.headers
     assert page.headers["X-Content-Type-Options"] == "nosniff"
+
+
+def test_optera_rename_preserves_existing_experiments(tmp_path, monkeypatch):
+    from optera.storage import default_data_dir
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.delenv("OPTERA_DATA_DIR", raising=False)
+    monkeypatch.delenv("KORDEN_DATA_DIR", raising=False)
+    archive = tmp_path / ".korden" / "experiments.sqlite3"
+    job = example()
+    run_id = save_experiment(job, {"note": "preserve historical record"}, archive)
+    assert default_data_dir() == archive.parent
+    assert get_experiment(run_id)["result"]["note"] == "preserve historical record"
+    assert not (tmp_path / ".optera" / "experiments.sqlite3").exists()
+
+    # Explicit new deployment directory must override the legacy location.
+    monkeypatch.setenv("OPTERA_DATA_DIR", str(tmp_path / "new-optera-archive"))
+    assert default_data_dir() == tmp_path / "new-optera-archive"
+    assert get_experiment(run_id, archive) is not None
+
+
+def test_legacy_data_directory_override_remains_supported(tmp_path, monkeypatch):
+    from optera.storage import default_data_dir
+    monkeypatch.delenv("OPTERA_DATA_DIR", raising=False)
+    monkeypatch.setenv("KORDEN_DATA_DIR", str(tmp_path / "existing-volume"))
+    assert default_data_dir() == tmp_path / "existing-volume"

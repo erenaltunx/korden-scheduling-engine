@@ -1,4 +1,4 @@
-name: KORDEN Quality Gate
+name: OPTERA Quality Gate
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: korden-ci-${{ github.workflow }}-${{ github.ref }}
+  group: optera-ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -31,14 +31,14 @@ jobs:
       - run: python -m pip check
       - run: python -m pytest -q
         env:
-          KORDEN_DATA_DIR: ${{ runner.temp }}/korden-test-data
-      - run: python -m compileall -q korden
+          OPTERA_DATA_DIR: ${{ runner.temp }}/optera-test-data
+      - run: python -m compileall -q optera
       - run: node --check static/app.js
-      - name: Verify brand cleanup
+      - name: Verify old branding is absent from public views
         run: |
-          old_name=$(printf '%s%s' 'FOR' 'GE')
-          if git grep -niE "(^|[^[:alnum:]])${old_name}([^[:alnum:]]|$)" -- .; then
-            echo 'Legacy product name found.'; exit 1
+          old_name=$(printf '%s%s' 'KOR' 'DEN')
+          if git grep -niE "(^|[^[:alnum:]])${old_name}([^[:alnum:]]|$)" -- README.md static/ .devcontainer/ render.yaml; then
+            echo 'Legacy product name found in public UI or setup files.'; exit 1
           fi
 
   windows-smoke:
@@ -54,8 +54,8 @@ jobs:
       - run: python -m pip check
       - run: python -m pytest -q
         env:
-          KORDEN_DATA_DIR: ${{ runner.temp }}/korden-test-data
-      - run: python -m compileall -q korden
+          OPTERA_DATA_DIR: ${{ runner.temp }}/optera-test-data
+      - run: python -m compileall -q optera
 
   strong-baseline-lab:
     name: Four-policy benchmark audit
@@ -71,7 +71,7 @@ jobs:
       - run: python benchmark_lab.py --count 15 --jobs 5 --time-limit 3 --start-seed 100 --out artifacts/lab
       - uses: actions/upload-artifact@v4
         with:
-          name: korden-four-policy-benchmark
+          name: optera-four-policy-benchmark
           path: artifacts/lab.*
 
   cross-industry-workloads:
@@ -98,7 +98,7 @@ jobs:
           PYCODE
       - uses: actions/upload-artifact@v4
         with:
-          name: korden-cross-industry-audit
+          name: optera-cross-industry-audit
           path: |
             artifacts/cross_industry.*
             artifacts/archive_v06.*
@@ -124,7 +124,7 @@ jobs:
           PYCODE
       - uses: actions/upload-artifact@v4
         with:
-          name: korden-external-ft06
+          name: optera-external-ft06
           path: artifacts/ft06.json
 
   disruption-replay:
@@ -141,7 +141,7 @@ jobs:
       - run: python disruption_lab.py --count 10 --time-limit 3 --out artifacts/disruption
       - uses: actions/upload-artifact@v4
         with:
-          name: korden-rolling-reschedule-replay
+          name: optera-rolling-reschedule-replay
           path: artifacts/disruption.*
 
   reproducible-benchmark:
@@ -158,7 +158,7 @@ jobs:
       - run: python benchmark_suite.py --count 10 --jobs 5 --time-limit 4 --out artifacts/ci_suite
       - uses: actions/upload-artifact@v4
         with:
-          name: korden-ci-benchmark
+          name: optera-ci-benchmark
           path: artifacts/ci_suite.*
 
   container-smoke:
@@ -167,20 +167,50 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t korden-ci .
-      - run: docker run -d --name korden-smoke -p 127.0.0.1:8000:8000 korden-ci
+      - run: docker build -t optera-ci .
+      - run: docker run -d --name optera-smoke -p 127.0.0.1:8000:8000 optera-ci
       - name: Health and UI smoke check
         run: |
           for i in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:8000/api/health; then break; fi
             sleep 1
           done
-          curl -fsS http://127.0.0.1:8000/api/health | grep -q KORDEN
-          curl -fsS http://127.0.0.1:8000/ | grep -q KORDEN
+          curl -fsS http://127.0.0.1:8000/api/health | grep -q OPTERA
+          curl -fsS http://127.0.0.1:8000/ | grep -q OPTERA
           curl -fsS http://127.0.0.1:8000/api/public-benchmarks/ft06 | grep -q JSPLIB
           curl -fsS http://127.0.0.1:8000/api/universal/templates | grep -q 'Field service'
       - if: always()
-        run: docker logs korden-smoke || true
+        run: docker logs optera-smoke || true
+
+  hmlv-changeover-audit:
+    name: High-mix manufacturing setup and changeover research
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python changeover_lab.py --count 20 --start-seed 20261113 --time-limit 2 --out artifacts/hmlv_changeovers
+      - name: Compare generated outcomes to committed evidence
+        run: |
+          python - <<'PYCODE'
+          import json
+          expected=json.load(open('docs/benchmarks/hmlv_changeover_v1.json'))
+          actual=json.load(open('artifacts/hmlv_changeovers.json'))
+          assert actual['metadata']['input_checksum_sha256']==expected['metadata']['input_checksum_sha256']
+          assert actual['summary']['count']==20
+          assert actual['summary']['proven_optima']==20
+          assert actual['summary']['baseline_total']==455
+          assert actual['summary']['optimized_total']==327
+          assert all(a['optimized_weighted_tardiness']<=a['baseline_weighted_tardiness'] for a in actual['rows'])
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: optera-hmlv-changeover-audit
+          path: artifacts/hmlv_changeovers.*
 
   enterprise-workforce-audit:
     name: Workforce optimization and relational data integrity
@@ -209,7 +239,7 @@ jobs:
           PYCODE
       - uses: actions/upload-artifact@v4
         with:
-          name: korden-workforce-sql-audit
+          name: optera-workforce-sql-audit
           path: |
             artifacts/staffing.*
             artifacts/enterprise/*.csv

@@ -1,6 +1,6 @@
 # Cross-industry scheduling smoke benchmark — v0.6
 
-The same solver + independent schedule validator were used for three completely different **fictional** workloads. This exercises the universal schema and capability matching; it does **not** establish that KORDEN is ready to manage real businesses.
+The same solver + independent schedule validator were used for three completely different **fictional** workloads. This exercises the universal schema and capability matching; it does **not** establish that OPTERA is ready to manage real businesses.
 
 ### Reproduction
 

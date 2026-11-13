@@ -1,12 +1,12 @@
 """Dynamic, skill-based staffing: actual MILP decision, independent checks, replay."""
 from copy import deepcopy
 import pytest
-from korden.universal import normalize_universal
-from korden.model import validate_scenario
-from korden.baseline import dispatch
-from korden.optimizer import optimize
-from korden.evaluation import check_schedule, evaluate
-from korden.reschedule import prepare_rolling, rolling_dispatch
+from optera.universal import normalize_universal
+from optera.model import validate_scenario
+from optera.baseline import dispatch
+from optera.optimizer import optimize
+from optera.evaluation import check_schedule, evaluate
+from optera.reschedule import prepare_rolling, rolling_dispatch
 
 
 def staffing_case():

@@ -1,11 +1,11 @@
-# KORDEN technical architecture / stable extension contracts
+# OPTERA technical architecture / stable extension contracts
 
 ```text
 Browser (static/)
     | JSON /api/run  or  /api/reschedule
-HTTP boundary (korden/api.py)  -> request caps, demo mode, security headers
+HTTP boundary (optera/api.py)  -> request caps, demo mode, security headers
     | validated scenario
-Application service (korden/service.py)
+Application service (optera/service.py)
     |-> Four classical reference plans (baseline.py)
     |-> Rolling-horizon execution safety (reschedule.py)
     |-> Strict public JSP importer (public_benchmarks.py)
@@ -21,13 +21,13 @@ validated experiment + schema version + solver evidence
 
 ## Design rules for future features
 
-1. **Mathematical solver never imports FastAPI, SQLite, or UI code.** `optimize` is pure relative to input data. New solvers are registered explicitly in `korden/engines.py`, not dynamically imported from request strings.
+1. **Mathematical solver never imports FastAPI, SQLite, or UI code.** `optimize` is pure relative to input data. New solvers are registered explicitly in `optera/engines.py`, not dynamically imported from request strings.
 2. **One stable solver contract:** `solver(scenario: dict, time_limit: float, *, options) -> {"schedule": list|None, "solver": metadata}`. Rolling mode receives fixed-operation assignments and earliest future start; normal calls retain backwards-compatible defaults. Every non-null schedule must pass `evaluation.check_schedule` **before** it can appear in results or be archived.
 3. **Versioned schemas:** scenario JSON has `schema_version: 1`. Unversioned historical scenarios are read as v1; unsupported future versions are rejected, not silently misread. Changing the schema needs a migration + regression fixture.
 4. **Stable KPI meanings:** weighted tardiness is sum of max(0, completion-due) × weight, units weighted-hours. Never reinterpret as money or real savings.
 5. **A failed optimizer may keep the valid EDD plan**, but metadata MUST say fallback; never call a fallback mathematically optimal.
 6. **API is an adapter:** no solver/business rules in the frontend. Keep `/api/run` response compatible or introduce `/api/v2` with a migration.
-7. **Storage boundaries:** persistent history is local-only (`KORDEN_PUBLIC_DEMO=0`). The public demo has no private DB endpoints and never archives scenarios. DB changes require forward-only migrations; refuse newer versions.
+7. **Storage boundaries:** persistent history is local-only (`OPTERA_PUBLIC_DEMO=0`). The public demo has no private DB endpoints and never archives scenarios. DB changes require forward-only migrations; refuse newer versions.
 8. **No silent upgrades:** change dependencies on a branch, run the full CI matrix and benchmark, review the diff, then merge; tag releases after CI.
 9. **Data recovery:** SQLite is not tracked in Git. Back it up using the SQLite online backup API; test actual restoration; see `RECOVERY.md`.
 10. **Performance security:** public solver time and size limits are not a substitute for infrastructure limits.
@@ -47,7 +47,7 @@ Future shift calendars, setups and disruptions should be separate focused module
 
 ## v0.6 cross-industry adapter, not a duplicated optimizer
 
-`korden/universal.py` accepts strictly versioned `resources` and `work_orders` and maps them onto the existing validated machine/job primitive. Resource skills are evaluated against the complete set of required capabilities. Resource availability windows are copied into the engine's downtime constraints. Sector-specific names, kinds, and time-unit metadata remain with the source scenario. The universal API results contain the compiled scenario and model-scope statement for auditability.
+`optera/universal.py` accepts strictly versioned `resources` and `work_orders` and maps them onto the existing validated machine/job primitive. Resource skills are evaluated against the complete set of required capabilities. Resource availability windows are copied into the engine's downtime constraints. Sector-specific names, kinds, and time-unit metadata remain with the source scenario. The universal API results contain the compiled scenario and model-scope statement for auditability.
 
 The adapter is limited to **exactly one exclusive resource per step, sequential steps per work order**. It rejects unknown keys (including attempted capacity, simultaneous-worker, inventory or travel constraints). This is essential: a solver cannot claim feasibility for rules it did not encode. Future adapters should be separate, versioned modules and support constraint coverage reports with negative tests.
 
@@ -59,3 +59,12 @@ The browser's guided editor only changes the canonical JSON via the API's valida
 A task may have `support_resources` (legacy/internal optimizer) / `reserve_resources` (universal source). The core model creates a fixed one-valued assignment for each support resource. Disjunctive non-overlap constraints apply uniformly to *primary assignments and fixed support reservations*. Heuristic baselines search the earliest slot available simultaneously across all occupied resources. The independent verifier separately checks support-resource overlap and downtime. Rolling replanning keeps all started reservations intact and refuses outages that intersect them. Existing no-support source remains backward-compatible.
 
 Support selection is still fixed by input, not combinatorial staff assignment; resource capacity is exactly one. Historical reports use archived inputs to prevent silent benchmark drift.
+
+## v0.9 uniform product-family changeovers
+
+- `machines[].changeover_time` is an integer 0–120 time units. `operations[].setup_family` is mandatory when an operation can use a changeover-enabled primary machine. Universal source fields are `resources[].changeover_time` and `steps[].setup_family`.
+- Switching families on a **primary machine** requires minimum separation: `start(next) >= end(previous) + changeover_time`; same-family operations require zero extra time. Support resources never create this gap.
+- The constant switch cost satisfies the triangle inequality. Consequently, pairwise disjunctive MILP constraints are valid even for nonconsecutive tasks; arbitrary asymmetric family-to-family matrices MUST NOT be inserted into this model without a separate immediate-successor formulation.
+- `baseline.py`, `reschedule.py`, `optimizer.py` and independent `evaluation.py` implement the same rule, with negative feasibility tests and brute-force tiny-instance parity. `horizon()` includes the worst-case switch allowance.
+- Report `changeover_count` and `setup_time_units` as modeled allowances, not verified actual physical setup labor or euros. The model does not place changeovers at specific timestamps, co-optimize technicians for setups, or calculate setup costs.
+- `changeover_lab.py` freezes the synthetic generator seed and records all individual results, solver status and proof; benchmark scripts are not evidence of company savings.

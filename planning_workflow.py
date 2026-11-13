@@ -2,13 +2,13 @@
 import argparse
 import json
 from pathlib import Path
-from korden.data_pipeline import load_planning_directory,export_reporting
-from korden.universal import normalize_universal
-from korden.service import compare
+from optera.data_pipeline import load_planning_directory,export_reporting
+from optera.universal import normalize_universal
+from optera.service import compare
 
 
 def main():
-    parser=argparse.ArgumentParser(description='KORDEN ERP-style CSV planning and reporting')
+    parser=argparse.ArgumentParser(description='OPTERA ERP-style CSV planning and reporting')
     parser.add_argument('--data-dir',type=Path,required=True)
     parser.add_argument('--industry',default='Service operations')
     parser.add_argument('--name',default='Imported operational planning workload')

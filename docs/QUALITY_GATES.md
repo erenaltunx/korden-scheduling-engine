@@ -21,7 +21,7 @@ python -m pip install -r requirements.txt
 python -m pip check
 python -m pytest -q
 python benchmark_suite.py --count 10 --jobs 5 --time-limit 4 --out artifacts/ci_suite
-python -m compileall -q korden
+python -m compileall -q optera
 ```
 
 For every claimed improvement, keep exact dataset, machine conditions, software version, baseline, seed and solver status with the numbers. Test data does not imply real-factory savings.

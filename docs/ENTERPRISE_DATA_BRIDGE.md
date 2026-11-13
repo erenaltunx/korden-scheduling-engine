@@ -2,11 +2,11 @@
 
 ## What this does
 
-KORDEN now supports a complete **CSV → validated universal domain model → mathematical optimizer → independently checked schedules → relational reporting** workflow. It is a reproducible adapter inspired by real enterprise extracts, **not a licensed SAP connector or proof of SAP proficiency**. Both the data-ingestion contract and solver operate without cloud tokens or external services.
+OPTERA now supports a complete **CSV → validated universal domain model → mathematical optimizer → independently checked schedules → relational reporting** workflow. It is a reproducible adapter inspired by real enterprise extracts, **not a licensed SAP connector or proof of SAP proficiency**. Both the data-ingestion contract and solver operate without cloud tokens or external services.
 
 ### Source tables
 
-Supply three mandatory UTF-8 CSVs: `resources.csv`, `orders.csv`, `steps.csv`. Optionally supply `unavailability.csv`. The exact header contract is enforced by `korden/data_pipeline.py`; extra columns, unknown references, duplicated identifiers, impossible skill requirements, unsupported constraints, and invalid step orders fail closed. `capabilities`, `requires_all`, and staff pools use `;` as list separators.
+Supply three mandatory UTF-8 CSVs: `resources.csv`, `orders.csv`, `steps.csv`. Optionally supply `unavailability.csv`. The exact header contract is enforced by `optera/data_pipeline.py`; extra columns, unknown references, duplicated identifiers, impossible skill requirements, unsupported constraints, and invalid step orders fail closed. `capabilities`, `requires_all`, and staff pools use `;` as list separators.
 
 | CSV | Column names |
 |---|---|
@@ -27,7 +27,7 @@ python planning_workflow.py --data-dir samples/enterprise/manufacturing_flexible
 python planning_workflow.py --data-dir samples/enterprise/warehouse_flexible_crew --name "Fulfillment pilot" --industry "Warehouse" --time-unit minute --time-limit 5 --out artifacts/fulfillment_pilot
 ```
 
-Outputs: four Power BI / Excel-ready normalized CSV files plus a SQLite database. The database contains `experiments`, `run_summary`, `order_kpis`, `operation_schedule`, `resource_bookings`. Foreign keys link every reporting fact to the immutable experiment ID. Different runs append rather than deleting history; one ID cannot be accidentally overwritten. `docs/sql/korden_kpi_queries.sql` provides executable SQL business questions.
+Outputs: four Power BI / Excel-ready normalized CSV files plus a SQLite database. The database contains `experiments`, `run_summary`, `order_kpis`, `operation_schedule`, `resource_bookings`. Foreign keys link every reporting fact to the immutable experiment ID. Different runs append rather than deleting history; one ID cannot be accidentally overwritten. `docs/sql/optera_kpi_queries.sql` provides executable SQL business questions.
 
 The browser can import the source CSVs from **Enterprise Data Bridge**, run the same core optimizer, then download a ZIP containing independently verified report CSVs. It does not require writing JSON. Imported inputs are not saved by the import operation. Do not upload proprietary customer data to public demo instances.
 
@@ -48,6 +48,6 @@ The browser can import the source CSVs from **Enterprise Data Bridge**, run the 
 ```
 python -m pytest -q
 python staffing_lab.py --count 24 --seed-start 1000 --time-limit 2 --out artifacts/staffing_lab
-python -m compileall -q korden
+python -m compileall -q optera
 node --check static/app.js
 ```

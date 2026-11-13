@@ -45,7 +45,8 @@ function displayStats(s) {
   const box=$('scenarioStats');box.replaceChildren();
   const vals=[['Resources', s.machines.length],['Work orders',s.jobs.length],
     ['Operations',s.jobs.reduce((a,j)=>a+j.operations.length,0)],
-    ['Unavailable intervals',s.machines.reduce((a,m)=>a+(m.downtime||[]).length,0)]];
+    ['Unavailable intervals',s.machines.reduce((a,m)=>a+(m.downtime||[]).length,0)],
+    ['Changeover-enabled machines',s.machines.filter(m=>(m.changeover_time||0)>0).length]];
   for(const [key,val] of vals){const r=e('div',undefined,'scenario-stat-row');r.append(e('span',key),e('strong',val));box.append(r)}
 }
 function readScenario() {
@@ -96,6 +97,11 @@ function renderResult() {
       kpi('Makespan · '+currentTimeUnit+'s',o.makespan,b.makespan,'Final completion time',o.makespan<b.makespan),
       kpi('Solve time · sec',sol.solve_seconds.toFixed(3),null,sol.optimality_proven?'Mathematical optimum proven':'Best feasible plan / time limit',false)
     );
+  }
+  if (currentScenario.machines.some(m => (m.changeover_time || 0) > 0)) {
+    area.append(kpi('Required machine changeovers',o.changeover_count,b.changeover_count,
+      `${o.setup_time_units} ${currentTimeUnit} setup units vs. ${b.setup_time_units} baseline`,
+      o.changeover_count < b.changeover_count));
   }
   $('runState').textContent=sol.status.replaceAll('_',' ');
   const m=$('experimentMeta');m.replaceChildren(meta('Solver',sol.solver),meta('Solver status',sol.status),
@@ -189,7 +195,7 @@ async function rollingReplan() {
 }
 
 function downloadResult(){if(!lastResult)return;const b=new Blob([JSON.stringify({scenario:currentUniversalScenario||currentScenario,experiment:lastResult},null,2)],{type:'application/json'});
-  const link=document.createElement('a');link.href=URL.createObjectURL(b);link.download='korden_experiment_'+new Date().toISOString().slice(0,10)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}
+  const link=document.createElement('a');link.href=URL.createObjectURL(b);link.download='optera_experiment_'+new Date().toISOString().slice(0,10)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}
 async function refreshHistory(){
   const history=$('savedHistory');if(!history||$('historyPanel').hidden)return;
   try{
@@ -250,7 +256,7 @@ async function exportBi() {
       body:JSON.stringify({scenario:currentUniversalScenario,result:lastResult})});
     if(!resp.ok){const err=await resp.json();throw Error(err.detail||'Could not export validated reports')}
     const objectUrl=URL.createObjectURL(await resp.blob()),link=document.createElement('a');
-    link.href=objectUrl;link.download='korden-bi-export.zip';link.click();setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
+    link.href=objectUrl;link.download='optera-bi-export.zip';link.click();setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
     setStatus('Validated relational report exported for Excel / Power BI.');
   }catch(error){setStatus(error.message,true)}
   finally{button.disabled=false}
@@ -271,12 +277,26 @@ function populateStudioEditor() {
   for(const r of src.resources){const option=e('option',r.name+' · '+r.capabilities.join(', '));option.value=r.id;resources.append(option)}
   if(src.resources.some(r=>r.id===old))resources.value=old;
   $('studioEditor').hidden=false;
+  updateStudioResourceInputs();
   $('industrySummary').textContent=src.industry+' · '+src.resources.length+' resources · '+src.work_orders.length+' work orders · '+src.time_unit+' grid. Each step occupies one qualified resource; unsupported real-world constraints remain explicitly excluded.';
 }
 function updateStudioOrderInputs() {
   const src=currentUniversalScenario;if(!src)return;
   const found=src.work_orders.find(o=>o.id===$('studioOrder').value);
   if(found){$('studioDue').value=String(found.due_at);$('studioPriority').value=String(found.priority)}
+  const stepSelect=$('studioStep'), existing=stepSelect.value;stepSelect.replaceChildren();
+  for (const st of found?.steps||[]) { const o=e('option',st.name);o.value=st.id;stepSelect.append(o) }
+  if ((found?.steps||[]).some(st=>st.id===existing)) stepSelect.value=existing;
+  updateStudioStepInputs();
+}
+function updateStudioStepInputs() {
+  const order=currentUniversalScenario?.work_orders.find(o=>o.id===$('studioOrder').value);
+  const step=order?.steps.find(st=>st.id===$('studioStep').value);
+  $('studioSetupFamily').value=step?.setup_family||'';
+}
+function updateStudioResourceInputs() {
+  const machine=currentUniversalScenario?.resources.find(r=>r.id===$('studioResource').value);
+  $('studioChangeoverTime').value=String(machine?.changeover_time||0);
 }
 async function loadUniversal(id) {
   const response=await fetch('/api/universal/templates/'+encodeURIComponent(id));
@@ -295,7 +315,15 @@ async function loadUniversal(id) {
 async function updateUniversalScenario(kind) {
   if(!currentUniversalScenario)return;
   const draft=JSON.parse(JSON.stringify(currentUniversalScenario));
-  if(kind==='order'){
+  if(kind==='setup'){
+    const resource=draft.resources.find(r=>r.id===$('studioResource').value);
+    const order=draft.work_orders.find(o=>o.id===$('studioOrder').value);
+    const step=order?.steps.find(st=>st.id===$('studioStep').value);
+    const family=$('studioSetupFamily').value.trim(),setup=Number($('studioChangeoverTime').value);
+    if(!resource||!step||!Number.isInteger(setup)||setup<0||setup>120||family.length>40){setStatus('Choose a machine and operation; enter setup time 0–120.',true);return}
+    if(family) step.setup_family=family;else delete step.setup_family;
+    if(setup) resource.changeover_time=setup;else delete resource.changeover_time;
+  } else if(kind==='order'){
     const target=draft.work_orders.find(o=>o.id===$('studioOrder').value);
     const due=Number($('studioDue').value),priority=Number($('studioPriority').value);
     if(!target||!Number.isInteger(due)||due<0||due>10000||!Number.isInteger(priority)||priority<1||priority>100){setStatus('Enter a valid due time and a priority between 1 and 100.',true);return}
@@ -340,6 +368,9 @@ async function boot(){
   $('scenarioSelect').addEventListener('change',async(ev)=>{try{await loadScenario(ev.target.value)}catch(err){setStatus(err.message,true)}});
   $('loadIndustryButton').addEventListener('click',async()=>{try{await loadUniversal($('industrySelect').value)}catch(err){setStatus(err.message,true)}});
   $('studioOrder').addEventListener('change',updateStudioOrderInputs);
+  $('studioStep').addEventListener('change',updateStudioStepInputs);
+  $('studioResource').addEventListener('change',updateStudioResourceInputs);
+  $('studioApplySetup').addEventListener('click',()=>updateUniversalScenario('setup'));
   $('studioApplyOrder').addEventListener('click',()=>updateUniversalScenario('order'));
   $('studioApplyDown').addEventListener('click',()=>updateUniversalScenario('resource')); 
   try{const resp=await fetch('/api/scenarios');if(!resp.ok)throw Error('Could not load scenarios');
@@ -357,7 +388,7 @@ async function boot(){
         const opt2=e('option',item.industry+' · '+item.name);opt2.value='industry:'+item.id;selector.append(opt2);}
       if(templates.length)$('industrySummary').textContent='Choose one of '+templates.length+' sector templates, then edit priorities and availability without writing JSON.';
     }}catch(err){setStatus('Sector templates are temporarily unavailable: '+err.message,true);}
-    const chosen=scenarios.find(x=>x.id==='assembly_cell')||scenarios[0];if(chosen){selector.value=chosen.id;await loadScenario(chosen.id)}
+    const chosen=scenarios.find(x=>x.id==='setup_cell')||scenarios[0];if(chosen){selector.value=chosen.id;await loadScenario(chosen.id)}
   }catch(err){setStatus(err.message,true)}
   await refreshHistory();
 }

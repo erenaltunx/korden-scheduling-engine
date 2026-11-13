@@ -3,11 +3,11 @@ import copy
 import json
 from pathlib import Path
 import pytest
-from korden.baseline import dispatch_edd, earliest_slot
-from korden.evaluation import check_schedule, evaluate
-from korden.model import horizon, validate_scenario
-from korden.optimizer import optimize
-from korden.service import compare
+from optera.baseline import dispatch_edd, earliest_slot
+from optera.evaluation import check_schedule, evaluate
+from optera.model import horizon, validate_scenario
+from optera.optimizer import optimize
+from optera.service import compare
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -140,7 +140,7 @@ def test_allows_just_touching_maintenance_window():
 def test_api_health_and_scenarios():
     try:
         from fastapi.testclient import TestClient
-        from korden.api import app
+        from optera.api import app
         client = TestClient(app)
     except ImportError:
         pytest.skip('httpx not installed (optional API integration test)')

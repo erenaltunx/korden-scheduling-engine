@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="KORDEN — Cross-industry operations scheduling and measurable optimization." />
-  <title>KORDEN | Operations Optimization Workbench</title>
+  <meta name="description" content="Optera — Finite-capacity production scheduling, workforce assignment and disruption recovery." />
+  <title>Optera | Production Scheduling & Recovery</title>
   <link rel="stylesheet" href="/static/styles.css" />
   <script src="/static/app.js" defer></script>
 </head>
 <body>
 <div class="app-layout">
   <aside class="sidebar">
-    <div class="brand"><span class="brand-symbol">K</span><div><div class="brand-title">KORDEN<span class="brand-dot">.</span></div><div class="brand-sub">OPERATIONS OPTIMIZATION</div></div></div>
-    <div class="sidebar-intro">Scenario control <span class="version">v0.8</span></div>
+    <div class="brand"><span class="brand-symbol">O</span><div><div class="brand-title">OPTERA<span class="brand-dot">.</span></div><div class="brand-sub">PRODUCTION SCHEDULING</div></div></div>
+    <div class="sidebar-intro">Scenario control <span class="version">v0.9</span></div>
     <div class="control-group">
       <label for="scenarioSelect">Choose a workflow</label>
       <select id="scenarioSelect"><option>Loading…</option></select>
-      <p class="help">Choose a manufacturing, warehouse or service workflow. Public research benchmarks are available locally.</p>
+      <p class="help">Start with the CNC setup demonstration. Other workflows remain available for regression testing.</p>
     </div>
     <div class="control-group">
       <label for="limitInput">Solver time limit <span class="subdued">seconds</span></label>
@@ -57,9 +57,9 @@
   <main class="main">
     <header class="topbar"><div class="path"><span>Workbench</span><span class="slash">/</span><strong>Resource Scheduling</strong></div><div class="tag"><span class="tag-dot"></span> LOCAL ENGINE</div></header>
     <div class="content">
-      <div class="hero"><div class="hero-eyebrow">ENGINEERING DECISION INTELLIGENCE</div><h1>From constraints<br />to <span>competitive advantage.</span></h1><p>Configure resources and workloads from different sectors, test disruptions and calculate mathematically validated schedules. One engine, multiple industries.</p></div>
+      <div class="hero"><div class="hero-eyebrow">FINITE-CAPACITY PLANNING</div><h1>From production orders<br />to <span>a feasible shop-floor plan.</span></h1><p>Schedule high-mix production with machine capacity, qualified operators, changeovers and machine outages. Compare a transparent baseline with a mathematically checked plan.</p></div>
       <section class="industry-studio" aria-labelledby="studioTitle">
-        <div class="studio-heading"><div><div class="hero-eyebrow">CROSS-INDUSTRY RESOURCE STUDIO</div><h2 id="studioTitle">One engine. Different operations.</h2><p>Select an industry workflow, adjust its business priorities and resource availability, then optimize it.</p></div><span class="version">UNIVERSAL SCHEMA v1</span></div>
+        <div class="studio-heading"><div><div class="hero-eyebrow">CONFIGURABLE WORKLOAD STUDIO</div><h2 id="studioTitle">Focus on the production cell.</h2><p>Start with the high-mix CNC setup demonstration. Other resource workflows remain available as compatibility examples.</p></div><span class="version">UNIVERSAL SCHEMA v1</span></div>
         <div class="studio-grid">
           <label>Industry template<select id="industrySelect"><option value="">Loading sectors…</option></select></label>
           <button class="secondary-button" id="loadIndustryButton" type="button">Load sector workflow</button>
@@ -78,6 +78,13 @@
             <label>Unavailable until<input type="number" min="1" max="10000" step="1" id="studioDownEnd" value="25" /></label>
             <button class="secondary-button" type="button" id="studioApplyDown">Add availability block</button>
           </div>
+          <div class="studio-edit-grid">
+            <label>Operation<select id="studioStep"></select></label>
+            <label>Product family<input id="studioSetupFamily" maxlength="40" placeholder="e.g. TOOL_A" /></label>
+            <label>Selected machine: switch time (0–120)<input id="studioChangeoverTime" type="number" min="0" max="120" step="1" value="0" /></label>
+            <button class="secondary-button" type="button" id="studioApplySetup">Update setup constraints</button>
+          </div>
+          <p class="studio-help">Machine setup time applies only when the product family changes. All orders eligible for a changeover-enabled machine must declare a family. Set product families before enabling a new machine setup rule.</p>
           <p class="studio-help">All edits are validated. Each operation chooses one qualified primary resource and may reserve fixed simultaneous support resources (for example, a machine plus its operator). Select a qualified operator from an eligible skills pool; multi-role teams, travel times and material inventory remain unsupported and are rejected.</p>
         </div>
       </section>
@@ -108,7 +115,7 @@
         <section class="workspace-panel compact"><h2>Experiment metadata</h2><div id="experimentMeta" class="experiment-list"><div class="placeholder">No experiment executed.</div></div><div id="historyPanel"><h2 class="history-heading">Saved experiment history</h2><div id="savedHistory" class="experiment-list"><div class="placeholder">Loading saved experiments…</div></div></div></section>
         <section class="workspace-panel compact"><h2>Research integrity</h2><div class="research-note">Measured improvements apply <strong>only to the selected scenario and baseline</strong>. A solver's optimal result refers to the mathematical model, not to real-world savings. Results must be validated before CV use.</div><button id="downloadButton" class="download-button" disabled>Export full experiment JSON ↓</button><button id="exportBiButton" class="download-button" disabled>Export Power BI-ready CSV tables ↓</button></section>
       </div>
-      <footer>KORDEN / v0.8 · Cross-Industry Resource Scheduling &amp; Optimization · Independent engineering project</footer>
+      <footer>OPTERA / v0.9 · Finite-Capacity Production Scheduling &amp; Recovery · Independent engineering project</footer>
     </div>
   </main>
 </div>

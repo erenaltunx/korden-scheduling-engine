@@ -4,11 +4,11 @@ import json
 from pathlib import Path
 import pytest
 from benchmark_lab import run_lab
-from korden.baseline import POLICIES, dispatch, dispatch_edd
-from korden.evaluation import check_schedule, evaluate
-from korden.generator import generate_factory
-from korden.service import compare
-from korden.whatif import add_outage
+from optera.baseline import POLICIES, dispatch, dispatch_edd
+from optera.evaluation import check_schedule, evaluate
+from optera.generator import generate_factory
+from optera.service import compare
+from optera.whatif import add_outage
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -81,7 +81,7 @@ def test_research_lab_reproducible_and_nonnegative_gains():
 
 def test_api_accepts_baseline_policy_and_rejects_invalid():
     from fastapi.testclient import TestClient
-    from korden.api import app
+    from optera.api import app
     client=TestClient(app)
     payload={"scenario":example(),"time_limit":3,"baseline_policy":"spt"}
     resp=client.post("/api/run",json=payload)

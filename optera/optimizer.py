@@ -11,7 +11,8 @@ from time import perf_counter
 import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, milp
 from scipy.sparse import coo_array
-from .model import all_tasks, downtime_by_machine, horizon, validate_scenario
+from .model import (all_tasks, downtime_by_machine, horizon, validate_scenario,
+                    changeover_by_machine, changeover_gap)
 
 
 @dataclass
@@ -61,12 +62,30 @@ class LinearModel:
 
 def optimize(data: dict, time_limit: float = 8.0, *,
              fixed_operations: dict[str, dict] | None = None,
-             not_before: int = 0, objective: str = "weighted_tardiness") -> dict:
+             not_before: int = 0, objective: str = "weighted_tardiness",
+             reference_schedule: list[dict] | None = None,
+             tardiness_budget: int | None = None) -> dict:
     validate_scenario(data)
     if not (0.5 <= time_limit <= 60):
         raise ValueError("Solver time limit must be between 0.5 and 60 seconds")
-    if objective not in {"weighted_tardiness", "makespan"}:
-        raise ValueError("Unknown objective; choose weighted_tardiness or makespan")
+    if objective not in {"weighted_tardiness", "makespan", "stability"}:
+        raise ValueError("Unknown optimization objective")
+    if objective == "stability":
+        if not isinstance(reference_schedule, list) or type(tardiness_budget) is not int or tardiness_budget < 0:
+            raise ValueError("Stability optimization requires a reference schedule and nonnegative integer tardiness budget")
+        # The old plan may conflict with the *new* outage. It is intentionally
+        # a comparison target, not necessarily feasible after a disruption.
+        ref_keys = [r.get('key') for r in reference_schedule if isinstance(r, dict)]
+        expected = {task.key for task in all_tasks(data)}
+        if len(ref_keys) != len(expected) or set(ref_keys) != expected:
+            raise ValueError("Reference schedule must contain each operation exactly once")
+        if any(type(r.get('start')) is not int or r['start'] < 0 or
+               not isinstance(r.get('machine'), str) or
+               not isinstance(r.get('support_resources', []), list)
+               for r in reference_schedule):
+            raise ValueError("Reference schedule has invalid start/resource fields")
+    elif reference_schedule is not None or tardiness_budget is not None:
+        raise ValueError("Reference schedule and tardiness budget apply only to the stability objective")
     if type(not_before) is not int or not 0 <= not_before <= 10000:
         raise ValueError("not_before must be an integer hour between 0 and 10000")
     fixed_operations = fixed_operations or {}
@@ -76,6 +95,7 @@ def optimize(data: dict, time_limit: float = 8.0, *,
         raise ValueError("Fixed operations contain unknown task keys")
     by_job = {j["id"]: j for j in data["jobs"]}
     windows = downtime_by_machine(data)
+    changeovers = changeover_by_machine(data)
     h = horizon(data)
     big_m = h + max(t.duration for t in tasks)
     m = LinearModel()
@@ -128,11 +148,17 @@ def optimize(data: dict, time_limit: float = 8.0, *,
         for a, b in combinations(eligible, 2):
             z = m.var(f"order:{machine}:{a.key}:{b.key}")
             xa, xb = assignments[(a.key, machine)], assignments[(b.key, machine)]
-            # z=1 -> a precedes b; z=0 -> b precedes a, conditional on both selected.
+            # Setup applies only to consecutive use of the PRIMARY machine.
+            # This uniform family-switch rule obeys triangle inequality; hence
+            # the pairwise ordering model also enforces every actual changeover.
+            a_to_b = (changeover_gap(a.setup_family, b.setup_family, changeovers[machine])
+                      if machine in a.machines and machine in b.machines else 0)
+            b_to_a = (changeover_gap(b.setup_family, a.setup_family, changeovers[machine])
+                      if machine in a.machines and machine in b.machines else 0)
             m.row({starts[a.key]: 1, starts[b.key]: -1,
-                   xa: big_m, xb: big_m, z: big_m}, ub=3*big_m - a.duration)
+                   xa: big_m, xb: big_m, z: big_m}, ub=3*big_m - a.duration - a_to_b)
             m.row({starts[b.key]: 1, starts[a.key]: -1,
-                   xa: big_m, xb: big_m, z: -big_m}, ub=2*big_m - b.duration)
+                   xa: big_m, xb: big_m, z: -big_m}, ub=2*big_m - b.duration - b_to_a)
         for task in eligible:
             x = assignments[(task.key, machine)]
             for k, (ds, de) in enumerate(windows[machine]):
@@ -144,13 +170,36 @@ def optimize(data: dict, time_limit: float = 8.0, *,
     # Scaling makespan tie-break guarantees improving 1 unit weighted tardiness
     # is always preferable to any change in makespan (bounded by h).
     makespan = m.var("makespan", 0, h, cost=1.0)
+    tardiness_vars = {}
     for task in tasks:
         m.row({makespan: 1, starts[task.key]: -1}, lb=task.duration)
     for job in data["jobs"]:
         last_key = f"{job['id']}::{len(job['operations'])-1}"
         duration = tasks[next(i for i, t in enumerate(tasks) if t.key == last_key)].duration
         tard = m.var(f"tardiness:{job['id']}", 0, h, cost=(h+1)*job["weight"] if objective == "weighted_tardiness" else 0.0)
+        tardiness_vars[job['id']] = tard
         m.row({tard: 1, starts[last_key]: -1}, lb=duration - job["due"])
+    if objective == "stability":
+        assert tardiness_budget is not None and reference_schedule is not None
+        # Epsilon-constraint: protect the customer-service quality of the first
+        # scheduling stage, then minimize disruption to previously issued plans.
+        m.row({tardiness_vars[j['id']]: j['weight'] for j in data['jobs']}, ub=tardiness_budget)
+        previous = {r['key']: r for r in reference_schedule}
+        for task in tasks:
+            if task.key in fixed_operations:
+                continue
+            reference = previous[task.key]
+            shift = m.var(f"start_change:{task.key}", 0, h, cost=h+1)
+            m.row({shift: 1, starts[task.key]: -1}, lb=-reference['start'])
+            m.row({shift: 1, starts[task.key]: 1}, lb=reference['start'])
+            previous_machine = reference['machine']
+            for machine in task.machines:
+                if machine != previous_machine:
+                    m.vars[assignments[(task.key, machine)]].cost = 5*(h+1)
+            previous_support = set(reference.get('support_resources', []))
+            for supporter in task.support_options:
+                if supporter not in previous_support:
+                    m.vars[assignments[(task.key, supporter)]].cost = 5*(h+1)
     clock = perf_counter()
     result = m.solve(time_limit)
     elapsed = perf_counter() - clock
@@ -158,6 +207,8 @@ def optimize(data: dict, time_limit: float = 8.0, *,
                           "time_limit_with_solution" if result.x is not None else "no_feasible_solution",
                 "solver": "SciPy MILP / HiGHS", "objective": objective,
                 "frozen_operations": len(fixed_operations),
+                "tardiness_budget": tardiness_budget if objective == "stability" else None,
+                "stability_cost": "absolute start shifts + 5 * resource changes" if objective == "stability" else None,
                 "solve_seconds": round(elapsed, 3),
                 "model_variables": len(m.vars), "model_constraints": len(m.rows),
                 "optimality_proven": result.status == 0,
