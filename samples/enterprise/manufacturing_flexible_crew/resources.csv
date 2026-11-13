@@ -1,0 +1,6 @@
+resource_id,name,kind,capabilities
+MILL_1,CNC mill A,cnc_machine,milling
+MILL_2,CNC mill B,cnc_machine,milling
+QC_1,Inspection bench,inspection_station,inspection
+CNC_OPERATOR,CNC qualified operator,human_operator,operate_cnc
+CNC_OPERATOR_B,Second CNC qualified operator,human_operator,operate_cnc

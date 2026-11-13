@@ -2,10 +2,12 @@
 from __future__ import annotations
 import json
 import os
+import io
+import zipfile
 from pathlib import Path
 from threading import BoundedSemaphore
 from fastapi import FastAPI, HTTPException, Query, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Literal
@@ -14,6 +16,7 @@ from .service import compare
 from .reschedule import reschedule
 from .public_benchmarks import PUBLIC_INSTANCES, load_jsplib
 from .universal import normalize_universal, describe_universal
+from .data_pipeline import import_planning_csv, reporting_tables, make_csv, REPORT_COLUMNS
 from .storage import get_experiment, list_experiments, save_experiment
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -21,7 +24,7 @@ PUBLIC_DEMO = os.getenv("KORDEN_PUBLIC_DEMO", "0").lower() in {"1", "true", "yes
 # Public demo is not multi-tenant: it must NEVER expose or persist private experiments.
 MAX_REQUEST_BYTES = 128 * 1024
 PUBLIC_SOLVER_SLOTS = BoundedSemaphore(value=2)
-app = FastAPI(title="KORDEN — Cross-Industry Resource Optimization", version="0.7.0")
+app = FastAPI(title="KORDEN — Cross-Industry Resource Optimization", version="0.8.0")
 app.mount("/static", StaticFiles(directory=ROOT / "static"), name="static")
 
 
@@ -35,6 +38,18 @@ class RunRequest(BaseModel):
 
 class UniversalValidateRequest(BaseModel):
     scenario: dict
+
+
+class CSVImportRequest(BaseModel):
+    tables: dict[str,str]
+    name: str = Field(min_length=1, max_length=100)
+    industry: str = Field(min_length=1, max_length=100)
+    time_unit: Literal['minute','hour'] = 'hour'
+
+
+class BIExportRequest(BaseModel):
+    scenario: dict
+    result: dict
 
 
 class RescheduleRequest(BaseModel):
@@ -96,7 +111,7 @@ def home():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "application": "KORDEN", "version": "0.7.0"}
+    return {"status": "ok", "application": "KORDEN", "version": "0.8.0"}
 
 
 @app.get("/api/config")
@@ -241,7 +256,7 @@ def universal_run(payload: RunRequest):
         result['domain'] = describe_universal(payload.scenario)
         result['normalized_scenario'] = normalized
         result['note'] = ('Scenario-based cross-industry resource planning. '
-                          'Single resource per step; no travel, team assignment or real deployment savings.')
+                          'One primary and optional optimizer-selected support resource; no travel, variable-size teams or verified real-world savings.')
         if PUBLIC_DEMO:
             return {**result, 'persisted': False}
         run_id = save_experiment(payload.scenario, result)
@@ -249,3 +264,32 @@ def universal_run(payload: RunRequest):
     finally:
         if PUBLIC_DEMO:
             PUBLIC_SOLVER_SLOTS.release()
+
+
+@app.post('/api/enterprise/import-csv')
+def enterprise_import_csv(payload: CSVImportRequest):
+    """Safe, fail-closed CSV ingestion; does not persist user inputs."""
+    try:
+        source=import_planning_csv(payload.tables,name=payload.name,
+                                   industry=payload.industry,time_unit=payload.time_unit)
+        return {'scenario':source,'profile':describe_universal(source),
+                'normalized_scenario':normalize_universal(source)}
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@app.post('/api/enterprise/export-bi')
+def enterprise_export_bi(payload: BIExportRequest):
+    """Validate all schedules independently before producing safe Power BI-ready CSVs."""
+    try:
+        tables=reporting_tables(payload.scenario,payload.result,experiment_id='browser-export')
+        archive=io.BytesIO()
+        with zipfile.ZipFile(archive,'w',compression=zipfile.ZIP_DEFLATED) as z:
+            for name,rows in tables.items():
+                z.writestr(f'{name}.csv',make_csv(rows,REPORT_COLUMNS[name]))
+        archive.seek(0)
+        return StreamingResponse(archive,media_type='application/zip',headers={
+            'Content-Disposition':'attachment; filename="korden-bi-export.zip"',
+            'Cache-Control':'no-store'})
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error

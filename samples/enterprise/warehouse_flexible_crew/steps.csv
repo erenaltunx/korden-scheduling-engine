@@ -1,0 +1,13 @@
+order_id,sequence,step_id,name,duration,requires_all,eligible_resources,reserve_resources,choose_one_support_from,choose_one_support_with
+SHIP_001,1,pick,Pick items,24,pick,,,,
+SHIP_001,2,pack,Pack parcel,15,pack,,,,packing_labor
+SHIP_002,1,pick,Pick items,18,pick,,,,
+SHIP_002,2,pack,Pack parcel,11,pack,,,,packing_labor
+SHIP_003,1,pick,Pick items,30,pick,,,,
+SHIP_003,2,pack,Pack parcel,12,pack,,,,packing_labor
+SHIP_004,1,pick,Pick items,25,pick,,,,
+SHIP_004,2,pack,Pack parcel,17,pack,,,,packing_labor
+SHIP_005,1,pick,Pick items,26,pick,,,,
+SHIP_005,2,pack,Pack parcel,12,pack,,,,packing_labor
+SHIP_006,1,pick,Pick items,33,pick,,,,
+SHIP_006,2,pack,Pack parcel,19,pack,,,,packing_labor

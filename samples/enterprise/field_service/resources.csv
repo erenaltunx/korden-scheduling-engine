@@ -1,0 +1,5 @@
+resource_id,name,kind,capabilities
+VAN_A,Service vehicle A,vehicle,van
+VAN_B,Service vehicle B,vehicle,van
+TECH_A,Maintenance engineer A,person,certified
+TECH_B,Maintenance engineer B,person,certified

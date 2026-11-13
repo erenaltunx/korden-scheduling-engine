@@ -1,0 +1,7 @@
+order_id,name,available_at,due_at,priority
+SHIP_001,Priority delivery,0,45,8
+SHIP_002,Standard parcel,0,52,2
+SHIP_003,Priority delivery,10,70,6
+SHIP_004,Returns replacement,0,58,3
+SHIP_005,Same-day order,4,54,10
+SHIP_006,Regular dispatch,5,95,1

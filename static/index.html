@@ -12,7 +12,7 @@
 <div class="app-layout">
   <aside class="sidebar">
     <div class="brand"><span class="brand-symbol">K</span><div><div class="brand-title">KORDEN<span class="brand-dot">.</span></div><div class="brand-sub">OPERATIONS OPTIMIZATION</div></div></div>
-    <div class="sidebar-intro">Scenario control <span class="version">v0.7</span></div>
+    <div class="sidebar-intro">Scenario control <span class="version">v0.8</span></div>
     <div class="control-group">
       <label for="scenarioSelect">Choose a workflow</label>
       <select id="scenarioSelect"><option>Loading…</option></select>
@@ -78,8 +78,22 @@
             <label>Unavailable until<input type="number" min="1" max="10000" step="1" id="studioDownEnd" value="25" /></label>
             <button class="secondary-button" type="button" id="studioApplyDown">Add availability block</button>
           </div>
-          <p class="studio-help">All edits are validated. Each operation chooses one qualified primary resource and may reserve fixed simultaneous support resources (for example, a machine plus its operator). Flexible crew selection, travel times, and inventory remain unsupported—not silently ignored.</p>
+          <p class="studio-help">All edits are validated. Each operation chooses one qualified primary resource and may reserve fixed simultaneous support resources (for example, a machine plus its operator). Select a qualified operator from an eligible skills pool; multi-role teams, travel times and material inventory remain unsupported and are rejected.</p>
         </div>
+      </section>
+      <section class="industry-studio" aria-labelledby="enterpriseTitle">
+        <div class="studio-heading"><div><div class="hero-eyebrow">ENTERPRISE DATA BRIDGE</div>
+        <h2 id="enterpriseTitle">Plan from your own tables.</h2>
+        <p>Select CSV resources, orders, steps and optional unavailability tables. No credentials or live ERP connection required.</p>
+        </div><span class="version">CSV / SQL / POWER BI</span></div>
+        <div class="studio-edit-grid">
+          <label>Workflow name<input type="text" id="enterpriseName" value="Imported operations" maxlength="100" /></label>
+          <label>Industry<input type="text" id="enterpriseIndustry" value="Service operations" maxlength="100" /></label>
+          <label>Time unit<select id="enterpriseUnit"><option value="hour">Hours</option><option value="minute">Minutes</option></select></label>
+          <label>CSV files (3 or 4)<input id="enterpriseFiles" type="file" accept=".csv,text/csv" multiple /></label>
+        </div>
+        <button class="secondary-button" id="enterpriseImport" type="button">Validate and load CSV tables</button>
+        <p class="studio-help">File names: <code>resources.csv</code>, <code>orders.csv</code>, <code>steps.csv</code>, optional <code>unavailability.csv</code>. Duplicate, unknown, or unsupported fields are rejected.</p>
       </section>
       <div class="section-title"><div><h2>Performance benchmark</h2><p>Classical dispatching baseline vs. mixed-integer linear programming</p></div><div class="run-state" id="runState">Ready to run</div></div>
       <div class="kpis" id="kpis"><div class="empty-kpi">Run a scenario to generate your first measured benchmark.</div></div>
@@ -92,9 +106,9 @@
       </div>
       <div class="bottom-panels">
         <section class="workspace-panel compact"><h2>Experiment metadata</h2><div id="experimentMeta" class="experiment-list"><div class="placeholder">No experiment executed.</div></div><div id="historyPanel"><h2 class="history-heading">Saved experiment history</h2><div id="savedHistory" class="experiment-list"><div class="placeholder">Loading saved experiments…</div></div></div></section>
-        <section class="workspace-panel compact"><h2>Research integrity</h2><div class="research-note">Measured improvements apply <strong>only to the selected scenario and baseline</strong>. A solver's optimal result refers to the mathematical model, not to real-world savings. Results must be validated before CV use.</div><button id="downloadButton" class="download-button" disabled>Export full experiment JSON ↓</button></section>
+        <section class="workspace-panel compact"><h2>Research integrity</h2><div class="research-note">Measured improvements apply <strong>only to the selected scenario and baseline</strong>. A solver's optimal result refers to the mathematical model, not to real-world savings. Results must be validated before CV use.</div><button id="downloadButton" class="download-button" disabled>Export full experiment JSON ↓</button><button id="exportBiButton" class="download-button" disabled>Export Power BI-ready CSV tables ↓</button></section>
       </div>
-      <footer>KORDEN / v0.7 · Cross-Industry Resource Scheduling &amp; Optimization · Independent engineering project</footer>
+      <footer>KORDEN / v0.8 · Cross-Industry Resource Scheduling &amp; Optimization · Independent engineering project</footer>
     </div>
   </main>
 </div>

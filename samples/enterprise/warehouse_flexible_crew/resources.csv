@@ -1,0 +1,7 @@
+resource_id,name,kind,capabilities
+PICK_A,Picking station A,picking_station,pick
+PICK_B,Picking station B,picking_station,pick
+PACK_1,Packing bench 1,packing_station,pack
+PACK_2,Packing bench 2,packing_station,pack
+PACK_TEAM,Shared packing worker,human_operator,packing_labor
+PACK_TEAM_B,Second packing worker,human_operator,packing_labor

@@ -116,7 +116,7 @@ def normalize_universal(scenario: dict) -> dict:
         for j, raw_step in enumerate(steps):
             place = f'{loc}.steps[{j}]'
             step = _mapping(raw_step, place, {
-                'id', 'name', 'duration', 'requires_all', 'eligible_resources', 'reserve_resources'
+                'id', 'name', 'duration', 'requires_all', 'eligible_resources', 'reserve_resources', 'choose_one_support_from', 'choose_one_support_with'
             })
             sid = _name(step, 'id', place)
             _name(step, 'name', place)
@@ -143,8 +143,24 @@ def normalize_universal(scenario: dict) -> dict:
                 raise ValueError(f'{place}.reserve_resources must be unique known resource IDs')
             if set(reserved) & set(eligible):
                 raise ValueError(f'{place}.reserve_resources cannot also be primary-resource candidates')
+            if 'choose_one_support_from' in step and 'choose_one_support_with' in step:
+                raise ValueError(f'{place} must choose either a named support pool or support capabilities')
+            requirements_support = _caps(step.get('choose_one_support_with', []), place+'.choose_one_support_with')
+            if requirements_support:
+                options = [rid for rid, tags in known_resources.items()
+                           if set(requirements_support).issubset(tags) and rid not in eligible and rid not in reserved]
+                if not options:
+                    raise ValueError(f'{place} has no eligible supporting resource with required skills')
+            else:
+                options = step.get('choose_one_support_from', [])
+            if (not isinstance(options, list) or any(not isinstance(r, str) or r not in known_resources for r in options)
+                    or len(set(options)) != len(options) or len(options) > 12):
+                raise ValueError(f'{place}.choose_one_support_from must be unique known resource IDs')
+            if set(options) & (set(eligible) | set(reserved)):
+                raise ValueError(f'{place}.choose_one_support_from overlaps primary or reserved resources')
             compiled_steps.append({'id': sid, 'duration': duration, 'machines': eligible,
-                                   **({'support_resources': reserved} if reserved else {})})
+                                   **({'support_resources': reserved} if reserved else {}),
+                                   **({'support_options': options} if options else {})})
             step_count += 1
         compiled_orders.append({
             'id': oid, 'release': start, 'due': due, 'weight': priority,
@@ -171,10 +187,10 @@ def describe_universal(scenario: dict) -> dict:
         'work_orders': len(compiled['jobs']),
         'steps': sum(len(job['operations']) for job in compiled['jobs']),
         'capabilities': sorted({cap for r in scenario['resources'] for cap in r.get('capabilities', [])}),
-        'model_scope': ['one primary resource per step with optional fixed simultaneous support resources', 'sequential steps per order',
+        'model_scope': ['one primary resource per step with optional fixed or optimizer-selected simultaneous support resources', 'sequential steps per order',
                         'integer time grid', 'fixed resource unavailability',
                         'weighted tardiness or makespan'],
-        'unsupported': ['alternative support-resource selection', 'variable-size teams', 'batch capacities',
+        'unsupported': ['multiple independently selected support roles', 'variable-size teams', 'batch capacities',
                         'travel times', 'sequence-dependent setup times',
                         'materials/inventory', 'cross-order precedence', 'stochastic processing'],
     }

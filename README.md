@@ -4,7 +4,7 @@
 
 KORDEN is an independent, local-first **cross-industry operations research** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
-**Version:** 0.7.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+**Version:** 0.8.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
 
 ## Cross-industry resource studio (v0.6)
 
@@ -36,6 +36,17 @@ python run.py
 ```
 
 Open http://127.0.0.1:8000. On Windows `launch_windows.bat` can also start the app. For Docker users, `docker compose up --build` starts the app and persists saved experiments in the `korden-data` volume. The web interface is accessible at http://localhost:8000.
+
+## v0.8 — Dynamic staffing and enterprise data bridge
+
+- **Real staff-choice decision:** an operation may select one qualified operator from a pool while reserving primary equipment and other fixed supports. A person cannot be double-booked. Skills are mapped from an industry-neutral contract.
+- **ERP-style CSV imports without ERP claims:** browser or `planning_workflow.py` loads resources, orders, operations and optional unavailability; invalid links, duplicate columns and unsupported business constraints are rejected.
+- **SQL/BI reporting:** separately validated schedules export normalized order KPIs, operation timelines, resource bookings and run summaries as CSV; CLI additionally persists the fact tables in relational SQLite.
+- **Reproducible workforce experiment:** 24 seeded synthetic scenarios (144 orders), fixed staffing MILP **967** versus dynamically selectable staffing MILP **645** weighted tardiness (**33.30% lower**), with both optima proven in 24/24. This is NOT real-world cost saving.
+
+Reproduce with `python staffing_lab.py --count 24 --seed-start 1000 --time-limit 2 --out artifacts/staffing_lab` and `python planning_workflow.py --data-dir samples/enterprise/field_service --name Service --industry Service --time-unit minute --out artifacts/service`.
+
+See [`docs/ENTERPRISE_DATA_BRIDGE.md`](docs/ENTERPRISE_DATA_BRIDGE.md) and [`docs/CAREER_EVIDENCE.md`](docs/CAREER_EVIDENCE.md) for input contract, verified claims and explicit limits.
 
 ## Features currently implemented
 

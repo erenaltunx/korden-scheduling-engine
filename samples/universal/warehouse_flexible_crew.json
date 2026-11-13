@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "name": "Fulfillment operations with interchangeable trained packers",
+  "industry": "Warehouse operations",
+  "time_unit": "minute",
+  "resources": [
+    {
+      "id": "PICK_A",
+      "name": "Picking station A",
+      "kind": "picking_station",
+      "capabilities": [
+        "pick"
+      ],
+      "unavailable": []
+    },
+    {
+      "id": "PICK_B",
+      "name": "Picking station B",
+      "kind": "picking_station",
+      "capabilities": [
+        "pick"
+      ],
+      "unavailable": [
+        {
+          "start": 35,
+          "end": 45
+        }
+      ]
+    },
+    {
+      "id": "PACK_1",
+      "name": "Packing bench 1",
+      "kind": "packing_station",
+      "capabilities": [
+        "pack"
+      ],
+      "unavailable": []
+    },
+    {
+      "id": "PACK_2",
+      "name": "Packing bench 2",
+      "kind": "packing_station",
+      "capabilities": [
+        "pack"
+      ],
+      "unavailable": []
+    },
+    {
+      "id": "PACK_TEAM",
+      "name": "Shared packing worker",
+      "kind": "human_operator",
+      "capabilities": [
+        "packing_labor"
+      ],
+      "unavailable": [
+        {
+          "start": 70,
+          "end": 82
+        }
+      ]
+    },
+    {
+      "id": "PACK_TEAM_B",
+      "name": "Second packing worker",
+      "kind": "human_operator",
+      "capabilities": [
+        "packing_labor"
+      ],
+      "unavailable": [
+        {
+          "start": 0,
+          "end": 18
+        }
+      ]
+    }
+  ],
+  "work_orders": [
+    {
+      "id": "SHIP_001",
+      "name": "Priority delivery",
+      "available_at": 0,
+      "due_at": 45,
+      "priority": 8,
+      "steps": [
+        {
+          "id": "pick",
+          "name": "Pick items",
+          "duration": 24,
+          "requires_all": [
+            "pick"
+          ]
+        },
+        {
+          "id": "pack",
+          "name": "Pack parcel",
+          "duration": 15,
+          "requires_all": [
+            "pack"
+          ],
+          "choose_one_support_with": [
+            "packing_labor"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SHIP_002",
+      "name": "Standard parcel",
+      "available_at": 0,
+      "due_at": 52,
+      "priority": 2,
+      "steps": [
+        {
+          "id": "pick",
+          "name": "Pick items",
+          "duration": 18,
+          "requires_all": [
+            "pick"
+          ]
+        },
+        {
+          "id": "pack",
+          "name": "Pack parcel",
+          "duration": 11,
+          "requires_all": [
+            "pack"
+          ],
+          "choose_one_support_with": [
+            "packing_labor"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SHIP_003",
+      "name": "Priority delivery",
+      "available_at": 10,
+      "due_at": 70,
+      "priority": 6,
+      "steps": [
+        {
+          "id": "pick",
+          "name": "Pick items",
+          "duration": 30,
+          "requires_all": [
+            "pick"
+          ]
+        },
+        {
+          "id": "pack",
+          "name": "Pack parcel",
+          "duration": 12,
+          "requires_all": [
+            "pack"
+          ],
+          "choose_one_support_with": [
+            "packing_labor"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SHIP_004",
+      "name": "Returns replacement",
+      "available_at": 0,
+      "due_at": 58,
+      "priority": 3,
+      "steps": [
+        {
+          "id": "pick",
+          "name": "Pick items",
+          "duration": 25,
+          "requires_all": [
+            "pick"
+          ]
+        },
+        {
+          "id": "pack",
+          "name": "Pack parcel",
+          "duration": 17,
+          "requires_all": [
+            "pack"
+          ],
+          "choose_one_support_with": [
+            "packing_labor"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SHIP_005",
+      "name": "Same-day order",
+      "available_at": 4,
+      "due_at": 54,
+      "priority": 10,
+      "steps": [
+        {
+          "id": "pick",
+          "name": "Pick items",
+          "duration": 26,
+          "requires_all": [
+            "pick"
+          ]
+        },
+        {
+          "id": "pack",
+          "name": "Pack parcel",
+          "duration": 12,
+          "requires_all": [
+            "pack"
+          ],
+          "choose_one_support_with": [
+            "packing_labor"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "SHIP_006",
+      "name": "Regular dispatch",
+      "available_at": 5,
+      "due_at": 95,
+      "priority": 1,
+      "steps": [
+        {
+          "id": "pick",
+          "name": "Pick items",
+          "duration": 33,
+          "requires_all": [
+            "pick"
+          ]
+        },
+        {
+          "id": "pack",
+          "name": "Pack parcel",
+          "duration": 19,
+          "requires_all": [
+            "pack"
+          ],
+          "choose_one_support_with": [
+            "packing_labor"
+          ]
+        }
+      ]
+    }
+  ]
+}
