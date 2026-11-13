@@ -95,6 +95,16 @@ jobs:
           invalid["jobs"][0]["operations"][0]["duration"]=8
           status,_,body=fetch("/api/run",{"scenario":invalid,"time_limit":1})
           assert status==422, (status,body[:400])
-          print("Impossible shift rejected:",status)
+          error=json.loads(body)
+          assert isinstance(error["detail"],str)
+          guidance=error["diagnostic"]
+          assert guidance["code"]=="WORK_PERIOD_TOO_SHORT",guidance
+          assert guidance["duration"]==8,guidance
+          assert guidance["longest_open_period"]==5,guidance
+          assert guidance["machine_ids"]==["CNC"],guidance
+          assert guidance["title"] and guidance["next_step"],guidance
+          print("Live shift diagnostic:",guidance["code"],
+                "needs",guidance["duration"],
+                "longest available",guidance["longest_open_period"])
           print("All public demo checks passed")
           PYCODE
