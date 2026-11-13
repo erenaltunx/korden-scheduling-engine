@@ -4,7 +4,7 @@
 
 OPTERA is an independent, local-first **finite-capacity manufacturing scheduling** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
-**Version:** 0.9.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+**Version:** 0.11.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
 
 
 ## v0.10 — Harder, more honest manufacturing evidence
@@ -18,6 +18,10 @@ python research_lab.py --count-per-profile 20 --stress-count 10 --seed-base 2300
 ~~~
 
 See [research evidence and caveats](docs/ENGINEERING_EVIDENCE_V1.md). Detailed CSV/JSON are produced on demand; GitHub CI also uploads a smaller fixed-seed smoke report.
+
+## v0.11 — Controlled solver time-quality study
+
+The existing MILP model was evaluated on exactly the same 10 congested synthetic CNC workshops under **0.7 / 2 / 5-second** independent solver budgets. Guarded (validated MILP or classical fallback) weighted tardiness was **1,569 / 1,452 / 1,265**, against a fixed classical score of **1,597**; 5 seconds led to **20.79% lower aggregate tardiness**, but **0/10 mathematical optimality proofs** even then. The difference versus v0.10's 0.7-second run highlights normal time-limited solver variability; neither result is factory savings. See [full protocol and case-level evidence](docs/SOLVER_BUDGET_STUDY.md). Run `python solver_budget_lab.py --count 10 --budgets 0.7,2,5` to reproduce on your computer.
 
 ## Product focus: high-mix, low-volume production cells
 

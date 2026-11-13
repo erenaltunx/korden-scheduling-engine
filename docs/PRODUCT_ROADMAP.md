@@ -10,6 +10,10 @@ We replaced a single-machine success story with a **70-instance, four-complexity
 
 **Next priority: difficult-instance optimization quality**, not new industries or broad software features. Use the same fixed-seed congested instances under 0.7s, 2s, and 5s limits; compare raw candidate quality, fallback rate, relative MIP gap, proof rate, model-size limits, and full wall-clock runtime. Only then evaluate tighter mathematical formulations or CP-SAT. A larger number of favorable synthetic examples alone does not raise maturity score.
 
+## v0.11 solver-budget experiment — completed locally; independently checked in CI
+
+A fixed-seed 10-congested-workshop time-budget study found guarded weighted tardiness 1,569 / 1,452 / 1,265 under 0.7 / 2 / 5 seconds (classic comparator 1,597). No mathematical proof of optimality was achieved for any of these 10 scenarios, **even at 5 seconds**. The immediate next effort is mathematical-model strengthening on these same seeds under equal compute budgets. See [evidence](SOLVER_BUDGET_STUDY.md). These are *synthetic* results, not factory savings or an algorithmic breakthrough.
+
 ## Hard boundaries (protect deep specialization)
 
 - Domain: job-shop and flexible job-shop scheduling on machining/fabrication cells, under finite machine and qualified-worker capacity.
