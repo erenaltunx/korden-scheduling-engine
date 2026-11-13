@@ -2,7 +2,7 @@
 
 Model: job precedence; release times; optional machine assignments; pairwise
 machine disjunctions; fixed maintenance windows; weighted tardiness + makespan.
-All times integer hours. Jobs are non-preemptive. No setup/changeover yet.
+Times use the scenario integer grid. Jobs are non-preemptive; uniform family changeover gaps are supported.
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -212,7 +212,7 @@ def optimize(data: dict, time_limit: float = 8.0, *,
                 "solve_seconds": round(elapsed, 3),
                 "model_variables": len(m.vars), "model_constraints": len(m.rows),
                 "optimality_proven": result.status == 0,
-                "relative_mip_gap": float(getattr(result, "mip_gap", 0) or 0)
+                "relative_mip_gap": (float(result.mip_gap) if getattr(result, "mip_gap", None) is not None else None)
                                     if result.x is not None else None}
     if result.x is None:
         return {"schedule": None, "solver": metadata}
