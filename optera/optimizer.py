@@ -2,7 +2,7 @@
 
 Model: job precedence; release times; optional machine assignments; pairwise
 machine disjunctions; fixed maintenance windows; weighted tardiness + makespan.
-Times use the scenario integer grid. Jobs are non-preemptive; uniform family changeover gaps are supported.
+Times use the scenario integer grid. Jobs are non-preemptive. v0.12 provides tested tight/legacy formulations for controlled research.
 """
 from __future__ import annotations
 from dataclasses import dataclass
@@ -64,8 +64,11 @@ def optimize(data: dict, time_limit: float = 8.0, *,
              fixed_operations: dict[str, dict] | None = None,
              not_before: int = 0, objective: str = "weighted_tardiness",
              reference_schedule: list[dict] | None = None,
-             tardiness_budget: int | None = None) -> dict:
+             tardiness_budget: int | None = None,
+             formulation: str = "tight") -> dict:
     validate_scenario(data)
+    if formulation not in {"tight", "legacy"}:
+        raise ValueError("Formulation must be tight or legacy")
     if not (0.5 <= time_limit <= 60):
         raise ValueError("Solver time limit must be between 0.5 and 60 seconds")
     if objective not in {"weighted_tardiness", "makespan", "stability"}:
@@ -97,7 +100,33 @@ def optimize(data: dict, time_limit: float = 8.0, *,
     windows = downtime_by_machine(data)
     changeovers = changeover_by_machine(data)
     h = horizon(data)
+    # Recovery may begin well after the original estimated completion horizon.
+    # Preserve enough time for all remaining work beyond the replanning instant.
+    if not_before:
+        h = max(h, not_before + sum(t.duration for t in tasks) +
+                max(changeovers.values(), default=0) * max(0, len(tasks)-1) + 1)
     big_m = h + max(t.duration for t in tasks)
+    # Earliest starts from release dates + job precedence. Latest starts reserve
+    # enough horizon for all remaining operations in the *same* job. These
+    # bounds are mathematically valid even when machine availability differs.
+    # Tight mode only: legacy mode is retained as a paired-study control.
+    start_bounds: dict[str, tuple[int, int]] = {}
+    if formulation == "tight":
+        for job in data["jobs"]:
+            ops = job["operations"]
+            elapsed = 0
+            remaining = sum(op["duration"] for op in ops)
+            for index, op in enumerate(ops):
+                key = f"{job['id']}::{index}"
+                lower = max(not_before, job["release"] + elapsed)
+                upper = h - remaining
+                if key in fixed_operations:
+                    # Frozen work may legitimately precede the rescheduling
+                    # boundary; preserve its exact timing in the MILP.
+                    lower = upper = fixed_operations[key]["start"]
+                start_bounds[key] = (lower, upper)
+                elapsed += op["duration"]
+                remaining -= op["duration"]
     m = LinearModel()
     starts = {}
     for t in tasks:
@@ -107,7 +136,8 @@ def optimize(data: dict, time_limit: float = 8.0, *,
                 raise ValueError(f"Invalid fixed start for {t.key}")
             starts[t.key] = m.var(f"start:{t.key}", start, start)
         else:
-            starts[t.key] = m.var(f"start:{t.key}", not_before, h - t.duration)
+            lb, ub = start_bounds[t.key] if formulation == "tight" else (not_before, h - t.duration)
+            starts[t.key] = m.var(f"start:{t.key}", lb, ub)
     assignments = {}
     for t in tasks:
         for machine in t.machines:
@@ -155,28 +185,49 @@ def optimize(data: dict, time_limit: float = 8.0, *,
                       if machine in a.machines and machine in b.machines else 0)
             b_to_a = (changeover_gap(b.setup_family, a.setup_family, changeovers[machine])
                       if machine in a.machines and machine in b.machines else 0)
+            # Pair-specific valid disjunction constants avoid the extremely
+            # weak global horizon-based relaxation for congested cells.
+            # If an operation cannot start early/late because of precedence,
+            # the inactive pair inequality needs much less slack.
+            if formulation == "tight":
+                la, ua = start_bounds[a.key]
+                lb, ub = start_bounds[b.key]
+                m_ab = max(0, ua - lb + a.duration + a_to_b)
+                m_ba = max(0, ub - la + b.duration + b_to_a)
+            else:
+                m_ab = m_ba = big_m
             m.row({starts[a.key]: 1, starts[b.key]: -1,
-                   xa: big_m, xb: big_m, z: big_m}, ub=3*big_m - a.duration - a_to_b)
+                   xa: m_ab, xb: m_ab, z: m_ab}, ub=3*m_ab - a.duration - a_to_b)
             m.row({starts[b.key]: 1, starts[a.key]: -1,
-                   xa: big_m, xb: big_m, z: -big_m}, ub=2*big_m - b.duration - b_to_a)
+                   xa: m_ba, xb: m_ba, z: -m_ba}, ub=2*m_ba - b.duration - b_to_a)
         for task in eligible:
             x = assignments[(task.key, machine)]
             for k, (ds, de) in enumerate(windows[machine]):
                 before = m.var(f"before_downtime:{task.key}:{machine}:{k}")
-                m.row({starts[task.key]: 1, before: big_m, x: big_m},
-                      ub=ds + 2*big_m - task.duration)
-                m.row({starts[task.key]: -1, before: -big_m, x: big_m},
-                      ub=big_m - de)
+                if formulation == "tight":
+                    lb, ub = start_bounds[task.key]
+                    m_before = max(0, ub + task.duration - ds)
+                    m_after = max(0, de - lb)
+                else:
+                    m_before = m_after = big_m
+                m.row({starts[task.key]: 1, before: m_before, x: m_before},
+                      ub=ds + 2*m_before - task.duration)
+                m.row({starts[task.key]: -1, before: -m_after, x: m_after},
+                      ub=m_after - de)
     # Scaling makespan tie-break guarantees improving 1 unit weighted tardiness
     # is always preferable to any change in makespan (bounded by h).
-    makespan = m.var("makespan", 0, h, cost=1.0)
+    makespan_lb = (max((start_bounds[t.key][0] + t.duration for t in tasks), default=0)
+                   if formulation == "tight" else 0)
+    makespan = m.var("makespan", makespan_lb, h, cost=1.0)
     tardiness_vars = {}
     for task in tasks:
         m.row({makespan: 1, starts[task.key]: -1}, lb=task.duration)
     for job in data["jobs"]:
         last_key = f"{job['id']}::{len(job['operations'])-1}"
         duration = tasks[next(i for i, t in enumerate(tasks) if t.key == last_key)].duration
-        tard = m.var(f"tardiness:{job['id']}", 0, h, cost=(h+1)*job["weight"] if objective == "weighted_tardiness" else 0.0)
+        earliest_completion = start_bounds[last_key][0] + duration if formulation == "tight" else 0
+        tard_lb = max(0, earliest_completion - job['due']) if formulation == "tight" else 0
+        tard = m.var(f"tardiness:{job['id']}", tard_lb, h, cost=(h+1)*job["weight"] if objective == "weighted_tardiness" else 0.0)
         tardiness_vars[job['id']] = tard
         m.row({tard: 1, starts[last_key]: -1}, lb=duration - job["due"])
     if objective == "stability":
@@ -206,13 +257,14 @@ def optimize(data: dict, time_limit: float = 8.0, *,
     metadata = {"status": "optimal" if result.status == 0 else
                           "time_limit_with_solution" if result.x is not None else "no_feasible_solution",
                 "solver": "SciPy MILP / HiGHS", "objective": objective,
+                "formulation": formulation,
                 "frozen_operations": len(fixed_operations),
                 "tardiness_budget": tardiness_budget if objective == "stability" else None,
                 "stability_cost": "absolute start shifts + 5 * resource changes" if objective == "stability" else None,
                 "solve_seconds": round(elapsed, 3),
                 "model_variables": len(m.vars), "model_constraints": len(m.rows),
                 "optimality_proven": result.status == 0,
-                "relative_mip_gap": (float(result.mip_gap) if getattr(result, "mip_gap", None) is not None else None)
+                "relative_mip_gap": float(getattr(result, "mip_gap", 0) or 0)
                                     if result.x is not None else None}
     if result.x is None:
         return {"schedule": None, "solver": metadata}

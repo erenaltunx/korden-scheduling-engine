@@ -1,3 +1,10 @@
+## v0.12.0 — Hybrid finite-capacity scheduling and solution-quality audit (2026-11-13)
+- Added deterministic swap/insertion job-priority local search, independently validated against the same resource, sequence, maintenance and setup constraints as four classical dispatch policies.
+- Introduced hybrid local-search + MILP engine (separate research-grade optimum proof status, raw candidate evidence, timing and selected algorithm); kept MILP-only makespan option.
+- Tightened operation start bounds, machine disjunction Big-M values and downtime inequalities; retained legacy formulation for matched ablation. Fixed the rolling-horizon boundary exceeding original planning horizon.
+- Reproducible 40-scenario synthetic benchmark: 501 operations, aggregate weighted tardiness 2757→2132 (−22.67%), 30/40 proven optima. In 10 congested instances: 1597→1304 (−18.35%), 0/10 optimality proofs.
+- Added independent mathematical and API tests and CI smoke audit; no real factory-savings or total-runtime advantage claimed.
+
 ## v0.9.0 — Production cell setup/changeover modeling (2026-11-13)
 - Narrowed primary product focus to high-mix, low-volume manufacturing finite-capacity scheduling.
 - Added uniform product-family changeover time to the validated scenario contract and portable adapter.

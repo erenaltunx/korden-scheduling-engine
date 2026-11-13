@@ -162,7 +162,7 @@ async function run(){
   $('runState').textContent='Solving';setStatus('Computing feasible schedule and MILP optimality…');
   try {
     const endpoint=currentUniversalScenario?'/api/universal/run':'/api/run';
-    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time,baseline_policy:$('baselinePolicy').value,objective:$('objectiveSelect').value})});
+    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario,time_limit:time,engine:$('objectiveSelect').value==='makespan'?'milp_highs':$('engineSelect').value,baseline_policy:$('baselinePolicy').value,objective:$('objectiveSelect').value})});
     const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Server error');
     if(currentUniversalScenario){currentUniversalScenario=scenario;currentScenario=data.normalized_scenario;currentTimeUnit=scenario.time_unit;displayStats(currentScenario);populateStudioEditor();}
     lastResult=data;setTab('optimized');renderResult();await refreshHistory();setStatus('Completed and validated. '+(data.persisted?'Saved to your local experiment history. ': 'Public demo, export results to keep them. ')+data.note);

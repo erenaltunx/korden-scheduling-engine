@@ -58,14 +58,11 @@ def policy_priority(job: dict, policy: str) -> tuple:
     raise ValueError(f"Unknown baseline policy {policy!r}; valid policies: {', '.join(POLICIES)}")
 
 
-def dispatch(data: dict, policy: str = "edd") -> list[dict]:
-    validate_scenario(data)
-    if policy not in POLICIES:
-        raise ValueError(f"Unknown baseline policy {policy!r}; valid policies: {', '.join(POLICIES)}")
+def _schedule_jobs(data: dict, jobs: list[dict]) -> list[dict]:
+    """Common capacity-feasible schedule builder for policies and local search."""
     occupied = downtime_by_machine(data)
     primary_occupied = {mid: [] for mid in occupied}
     setup_times = changeover_by_machine(data)
-    jobs = sorted(data["jobs"], key=lambda j: policy_priority(j, policy))
     schedule = []
     for job in jobs:
         ready = job["release"]
@@ -93,6 +90,26 @@ def dispatch(data: dict, policy: str = "edd") -> list[dict]:
             primary_occupied[machine].append((start, end, op.get('setup_family')))
             ready = end
     return sorted(schedule, key=lambda x: (x["start"], x["machine"], x["key"]))
+
+
+def dispatch(data: dict, policy: str = "edd") -> list[dict]:
+    validate_scenario(data)
+    if policy not in POLICIES:
+        raise ValueError(f"Unknown baseline policy {policy!r}; valid policies: {', '.join(POLICIES)}")
+    return _schedule_jobs(data, sorted(data["jobs"], key=lambda j: policy_priority(j, policy)))
+
+
+def dispatch_job_order(data: dict, job_ids: list[str] | tuple[str, ...]) -> list[dict]:
+    """Feasible schedule for a specific total work-order priority ordering.
+
+    Restricted search space by design: the entire operation sequence within
+    each job stays intact and all original physical constraints are respected.
+    """
+    validate_scenario(data)
+    by_id = {j['id']: j for j in data['jobs']}
+    if not isinstance(job_ids, (list, tuple)) or len(job_ids) != len(by_id) or set(job_ids) != set(by_id):
+        raise ValueError('job_ids must be a complete unique permutation of all work orders')
+    return _schedule_jobs(data, [by_id[jid] for jid in job_ids])
 
 
 def dispatch_edd(data: dict) -> list[dict]:

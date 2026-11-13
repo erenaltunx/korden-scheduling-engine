@@ -4,7 +4,7 @@
 
 OPTERA is an independent, local-first **finite-capacity manufacturing scheduling** project that solves production scheduling problems rather than merely showing dashboards. It builds an Earliest Due Date (EDD) baseline and four classical dispatching policies (EDD/FIFO/SPT/WSPT) alongside a real mixed-integer (MILP/HiGHS) plan, checks both schedules independently for feasibility, and reports fair, reproducible KPIs. No AI subscription, API key, or company data required.
 
-**Version:** 0.11.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
+**Version:** 0.12.0 — versioned engineering prototype. **Not an authenticated, production-grade MES.**
 
 
 ## v0.10 — Harder, more honest manufacturing evidence
@@ -18,6 +18,14 @@ python research_lab.py --count-per-profile 20 --stress-count 10 --seed-base 2300
 ~~~
 
 See [research evidence and caveats](docs/ENGINEERING_EVIDENCE_V1.md). Detailed CSV/JSON are produced on demand; GitHub CI also uploads a smaller fixed-seed smoke report.
+
+## v0.12 — Faster feasible plans for congested CNC cells (hybrid search + MILP)
+
+A focused **production scheduling** algorithmic upgrade, not a new sector or an AI dashboard. Optera now combines (1) deterministic **swap/insertion local search** over entire work-order priority sequences and (2) a **tighter SciPy/HiGHS MILP** formulation with valid operation-specific start bounds and pair-specific Big-M values. Every returned schedule passes independent capacity/precedence/changeover feasibility validation. Only MILP may establish mathematical optimality; heuristic plans are never labeled proven optimal.
+
+**Paired synthetic research:** across 40 production-cell scenarios (281 orders, 501 operations), compare against the best of **EDD/FIFO/SPT/WSPT per instance**. Aggregate weighted tardiness went **2,757 → 2,132 (22.67% reduction)**, with **25 improved / 15 tied** and **30/40 mathematically proven optima**. For the 10 congested cells, the hybrid achieved **1,597 → 1,304 (18.35%)** with **0/10 proofs** under the 0.7-second *MILP* time allowance; local-search computation is additional and reported separately. All numbers are synthetic, not factory savings or equal-wall-clock algorithm comparisons. Detailed data and caveats: [engineering study](docs/HYBRID_ENGINEERING_EVIDENCE.md), [CSV](docs/benchmarks/hybrid_40_v012.csv), [JSON](docs/benchmarks/hybrid_40_v012.json).
+
+Run `python hybrid_lab.py --count 10 --seed 230011 --limit 0.7 --evaluations 150 --profiles single_cell,two_stage,flexible_cell,congested_cell --out artifacts/hybrid_40`. The planner UI now offers **Hybrid local search + MILP** or the original MILP-only option; makespan calculations remain MILP-only.
 
 ## v0.11 — Controlled solver time-quality study
 

@@ -302,3 +302,33 @@ jobs:
         with:
           name: optera-solver-budget-smoke
           path: artifacts/solver_budget_smoke.*
+
+  hybrid-local-search-audit:
+    name: Hybrid scheduling algorithm and proof integrity
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python hybrid_lab.py --count 2 --seed 230011 --limit 0.7 --evaluations 150 --profiles single_cell,two_stage,flexible_cell,congested_cell --out artifacts/hybrid_smoke
+      - name: Verify feasible selection, provenance, and no invented proof
+        run: |
+          python - <<'PYCODE'
+          import json
+          x=json.load(open('artifacts/hybrid_smoke.json'))
+          assert x['metadata']['synthetic'] is True
+          assert x['summary']['instances'] == 8
+          assert all(len(r['input_sha256'])==64 for r in x['rows'])
+          assert all(r['hybrid_weighted_tardiness']<=r['baseline_weighted_tardiness'] for r in x['rows'])
+          assert all(r['selected_algorithm'] in ('milp_highs','local_search') for r in x['rows'])
+          assert all(r['full_wall_seconds']>=r['local_search_seconds'] for r in x['rows'])
+          assert all(isinstance(r['optimality_proven'],bool) for r in x['rows'])
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: optera-hybrid-scheduling-audit
+          path: artifacts/hybrid_smoke.*
