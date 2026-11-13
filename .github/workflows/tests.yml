@@ -272,3 +272,33 @@ jobs:
         with:
           name: optera-mixed-workshop-evidence
           path: artifacts/mixed_workshops.*
+
+  solver-budget-audit:
+    name: Controlled congested-cell time-budget comparison
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python solver_budget_lab.py --count 2 --seed-base 230011 --budgets 0.7,2 --out artifacts/solver_budget_smoke
+      - name: Verify seed-pair fairness, schedule protection and honest proof status
+        run: |
+          python - <<'PYCODE'
+          import json
+          report = json.load(open('artifacts/solver_budget_smoke.json'))
+          rows = report['rows']
+          assert len(rows) == 4
+          assert {r['seed'] for r in rows} == {230011, 230012}
+          assert all(len({r['input_sha256'] for r in rows if r['seed']==seed})==1 for seed in (230011,230012))
+          assert all(r['recommended_weighted_tardiness'] <= r['baseline_weighted_tardiness'] for r in rows)
+          assert report['metadata']['warm_start'] is False
+          assert all(r['time_budget_seconds'] in (0.7,2.0) for r in rows)
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: optera-solver-budget-smoke
+          path: artifacts/solver_budget_smoke.*
