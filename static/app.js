@@ -37,7 +37,7 @@ function applyOutage() {
   machine.downtime=merged.map(([a,b])=>({start:a,end:b}));
   scenario.factory_name=(scenario.factory_name||'Factory')+' | what-if outage '+mid+' '+start+'–'+end+'h';
   $('jsonEditor').value=JSON.stringify(scenario,null,2);
-  displayStats(scenario);lastResult=null;$('downloadButton').disabled=true;$('rescheduleButton').disabled=true;
+  displayStats(scenario);lastResult=null;$('downloadButton').disabled=true;$('exportBiButton').disabled=true;$('rescheduleButton').disabled=true;
   setStatus('Outage applied to scenario; run optimization to calculate new feasible schedule.');
 }
 function displayStats(s) {
@@ -108,7 +108,7 @@ function renderResult() {
       meta('Changed remaining operations',lastResult.stability.rescheduled_operations),
       meta('Machine reassignments',lastResult.stability.machine_reassignments),
       meta('Start-time shift (hours)',lastResult.stability.total_absolute_start_shift_hours)] : [])); 
-  $('downloadButton').disabled=false;$('rescheduleButton').disabled=Boolean(currentUniversalScenario);renderTimeline();
+  $('downloadButton').disabled=false;$('exportBiButton').disabled=!currentUniversalScenario;$('rescheduleButton').disabled=Boolean(currentUniversalScenario);renderTimeline();
 }
 function renderTimeline() {
   if(!lastResult||!currentScenario)return;
@@ -215,6 +215,47 @@ async function refreshHistory(){
   }catch(err){history.replaceChildren(e('div','Saved runs cannot be loaded right now.','placeholder'))}
 }
 
+async function importEnterpriseFiles() {
+  const selected=[...$('enterpriseFiles').files];
+  if(selected.length<3 || selected.length>4) {setStatus('Select 3 required CSV tables and optionally unavailability.csv.',true);return}
+  const accepted=['resources.csv','orders.csv','steps.csv','unavailability.csv'];
+  const tables={};
+  for(const file of selected){
+    const basename=file.name.toLowerCase();
+    if(!accepted.includes(basename) || tables[basename.slice(0,-4)] !== undefined || file.size>128*1024){
+      setStatus('Duplicate, unknown or oversized CSV file: '+file.name,true);return;
+    }
+    tables[basename.slice(0,-4)]=await file.text();
+  }
+  const button=$('enterpriseImport');button.disabled=true;
+  try {
+    const resp=await fetch('/api/enterprise/import-csv',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({tables,name:$('enterpriseName').value,industry:$('enterpriseIndustry').value,time_unit:$('enterpriseUnit').value})});
+    const data=await resp.json();if(!resp.ok)throw Error(typeof data.detail==='string'?data.detail:'CSV import failed');
+    currentUniversalScenario=data.scenario;currentScenario=data.normalized_scenario;currentTimeUnit=data.scenario.time_unit;
+    $('jsonEditor').value=JSON.stringify(data.scenario,null,2);lastResult=null;
+    $('downloadButton').disabled=true;$('exportBiButton').disabled=true;$('rescheduleButton').disabled=true;
+    displayStats(currentScenario);populateStudioEditor();
+    $('kpis').replaceChildren(e('div','CSV import validated. Run optimization to measure the result.','empty-kpi'));
+    $('timeline').replaceChildren(e('div','Imported '+data.scenario.industry+' data. Ready to optimize.','empty-state'));
+    setStatus('Imported '+data.profile.work_orders+' orders and '+data.profile.steps+' steps with independent validation.');
+  }catch(error){setStatus('CSV import refused: '+error.message,true)}
+  finally{button.disabled=false}
+}
+async function exportBi() {
+  if(!currentUniversalScenario || !lastResult)return;
+  const button=$('exportBiButton');button.disabled=true;
+  try {
+    const resp=await fetch('/api/enterprise/export-bi',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({scenario:currentUniversalScenario,result:lastResult})});
+    if(!resp.ok){const err=await resp.json();throw Error(err.detail||'Could not export validated reports')}
+    const objectUrl=URL.createObjectURL(await resp.blob()),link=document.createElement('a');
+    link.href=objectUrl;link.download='korden-bi-export.zip';link.click();setTimeout(()=>URL.revokeObjectURL(objectUrl),1000);
+    setStatus('Validated relational report exported for Excel / Power BI.');
+  }catch(error){setStatus(error.message,true)}
+  finally{button.disabled=false}
+}
+
 async function validateUniversal(source) {
   const response=await fetch('/api/universal/validate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scenario:source})});
   const data=await response.json();if(!response.ok)throw Error(typeof data.detail==='string'?data.detail:'Invalid universal workflow');
@@ -244,7 +285,7 @@ async function loadUniversal(id) {
   currentUniversalScenario=source;currentTimeUnit=source.time_unit;currentScenario=validated.normalized_scenario;
   $('jsonEditor').value=JSON.stringify(source,null,2);$('objectiveSelect').value='weighted_tardiness';
   $('scenarioSelect').value='industry:'+id;$('industrySelect').value=id;
-  lastResult=null;$('downloadButton').disabled=true;$('rescheduleButton').disabled=true;
+  lastResult=null;$('downloadButton').disabled=true;$('exportBiButton').disabled=true;$('rescheduleButton').disabled=true;
   displayStats(currentScenario);populateStudioEditor();
   $('kpis').replaceChildren(e('div','Run this sector workflow to compare a baseline with optimized resource allocation.','empty-kpi'));
   $('timeline').replaceChildren(e('div','Ready to optimize '+source.industry+'.','empty-state'));
@@ -271,7 +312,7 @@ async function updateUniversalScenario(kind) {
     const validated=await validateUniversal(draft);
     currentUniversalScenario=draft;currentScenario=validated.normalized_scenario;
     $('jsonEditor').value=JSON.stringify(draft,null,2);
-    lastResult=null;$('downloadButton').disabled=true;$('rescheduleButton').disabled=true;
+    lastResult=null;$('downloadButton').disabled=true;$('exportBiButton').disabled=true;$('rescheduleButton').disabled=true;
     displayStats(currentScenario);populateStudioEditor();
     setStatus('Resource/work order update validated. Run optimization to compare the revised schedule.');
   }catch(err){setStatus('Update rejected without changing your scenario: '+err.message,true)}
@@ -292,6 +333,7 @@ async function boot(){
   } catch (error) { /* Local fallback retains documented 60-second cap. */ }
   $('applyOutage').addEventListener('click',applyOutage);
   $('rescheduleButton').addEventListener('click',rollingReplan);
+  $('enterpriseImport').addEventListener('click',importEnterpriseFiles);$('exportBiButton').addEventListener('click',exportBi);
   $('runButton').addEventListener('click',run);$('tabOptimized').addEventListener('click',()=>setTab('optimized'));
   $('tabBaseline').addEventListener('click',()=>setTab('baseline'));$('downloadButton').addEventListener('click',downloadResult);
   $('toggleEditor').addEventListener('click',()=>{$('editorPanel').hidden=!$('editorPanel').hidden});

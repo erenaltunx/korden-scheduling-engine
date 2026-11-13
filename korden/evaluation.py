@@ -30,9 +30,14 @@ def check_schedule(data: dict, schedule: list[dict]) -> list[str]:
             continue
         if t.index == 0 and start < jobs[t.job_id]["release"]:
             errors.append(f"{key} starts before release")
-        if s.get('support_resources', []) != list(t.support_resources):
+        reserved = s.get('support_resources', [])
+        if (not isinstance(reserved, list) or len(reserved) != len(set(reserved)) or
+                set(reserved) - set(t.support_resources) - set(t.support_options) or
+                not set(t.support_resources).issubset(reserved) or
+                len(set(reserved) & set(t.support_options)) != (1 if t.support_options else 0)):
             errors.append(f"{key} has incorrect simultaneous support resource reservations")
-        for rid in [machine, *t.support_resources]:
+            continue
+        for rid in [machine, *reserved]:
             occupied[rid].append((start, end, key))
     missing = set(tasks) - set(by_key)
     errors.extend(f"Missing operation {k}" for k in sorted(missing))

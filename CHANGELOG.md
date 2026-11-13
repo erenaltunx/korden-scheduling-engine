@@ -1,3 +1,10 @@
+## v0.8.0 — Capability-based staff assignment + SQL/CSV business integration (2026-11-13)
+- Choose one qualified worker from a capability pool in the MILP itself, without double booking or forgetting existing fixed supports; baselines and rolling replay updated.
+- Added skill selector to universal v1 contract (additive, backwards-compatible), explicit validation and eight new staff-choice tests.
+- Enterprise CSV ingestion and SQLite/BI reporting with independent feasibility revalidation, Power BI-compatible CSV exports, foreign-keyed run facts and reusable SQL queries.
+- Three demo industry input bundles, audited API/CSV/SQL roundtrip, seeded 24-instance staffing optimization study with explicit limitations.
+- CI skill-allocation and enterprise ETL quality gate added; no real business savings, live ERP, or claimed SAP experience.
+
 ## v0.5.0 — Rolling-horizon scheduling and external benchmark validation (2026-11-13)
 - Real non-preemptive disruption replay: freeze operations already started; reallocate future tasks only.
 - Explicit rejection of outages interrupting in-progress operations; no hidden preemption assumption.

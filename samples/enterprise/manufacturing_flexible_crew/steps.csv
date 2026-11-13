@@ -1,0 +1,11 @@
+order_id,sequence,step_id,name,duration,requires_all,eligible_resources,reserve_resources,choose_one_support_from,choose_one_support_with
+BATCH_A,1,cut,CNC milling,6,milling,,,,operate_cnc
+BATCH_A,2,inspect,Quality inspection,3,inspection,,,,
+BATCH_B,1,cut,CNC milling,5,milling,,,,operate_cnc
+BATCH_B,2,inspect,Quality inspection,4,inspection,,,,
+BATCH_C,1,cut,CNC milling,7,milling,,,,operate_cnc
+BATCH_C,2,inspect,Quality inspection,2,inspection,,,,
+BATCH_D,1,cut,CNC milling,5,milling,,,,operate_cnc
+BATCH_D,2,inspect,Quality inspection,3,inspection,,,,
+BATCH_E,1,cut,CNC milling,8,milling,,,,operate_cnc
+BATCH_E,2,inspect,Quality inspection,3,inspection,,,,

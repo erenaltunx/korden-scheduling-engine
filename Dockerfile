@@ -9,7 +9,7 @@ COPY korden/ ./korden/
 COPY static/ ./static/
 COPY samples/ ./samples/
 COPY benchmarks/ ./benchmarks/
-COPY run.py benchmark.py benchmark_suite.py benchmark_lab.py disruption_lab.py public_benchmark.py backup.py ./
+COPY run.py benchmark.py benchmark_suite.py benchmark_lab.py disruption_lab.py public_benchmark.py staffing_lab.py planning_workflow.py backup.py ./
 RUN mkdir -p /data
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \

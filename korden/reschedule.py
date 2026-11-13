@@ -61,18 +61,20 @@ def rolling_dispatch(data: dict, fixed: dict[str, dict], now: int,
                 continue
             options = []
             for machine in op['machines']:
-                busy = occupied[machine] + [interval for rid in op.get('support_resources', [])
-                                            for interval in occupied[rid]]
-                start = earliest_slot(ready, op['duration'], busy)
-                options.append((start + op['duration'], start, machine))
-            end, start, machine = min(options)
+                for choice in (op.get('support_options') or [None]):
+                    reserved = [*op.get('support_resources', []), *([choice] if choice else [])]
+                    busy = occupied[machine] + [interval for rid in reserved for interval in occupied[rid]]
+                    start = earliest_slot(ready, op['duration'], busy)
+                    options.append((start + op['duration'], start, machine, choice or ''))
+            end, start, machine, choice = min(options)
+            reserved = [*op.get('support_resources', []), *([choice] if choice else [])]
             row = {'key': key, 'job': job['id'], 'operation': op['id'],
                    'machine': machine, 'start': int(start), 'end': int(end),
                    'duration': op['duration']}
-            if op.get('support_resources'):
-                row['support_resources'] = list(op['support_resources'])
+            if reserved:
+                row['support_resources'] = reserved
             schedule.append(row)
-            for rid in [machine, *op.get('support_resources', [])]:
+            for rid in [machine, *reserved]:
                 occupied[rid].append((start, end))
             ready = end
     schedule.sort(key=lambda r: (r['start'], r['machine'], r['key']))

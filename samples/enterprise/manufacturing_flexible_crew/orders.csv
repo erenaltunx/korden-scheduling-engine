@@ -1,0 +1,6 @@
+order_id,name,available_at,due_at,priority
+BATCH_A,Hydraulic batch A,0,13,4
+BATCH_B,Hydraulic batch B,0,11,2
+BATCH_C,Spare parts C,1,15,5
+BATCH_D,Urgent repair spares,2,12,9
+BATCH_E,Standard production lot,0,22,1

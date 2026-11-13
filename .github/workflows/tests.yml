@@ -180,3 +180,35 @@ jobs:
           curl -fsS http://127.0.0.1:8000/api/universal/templates | grep -q 'Field service'
       - if: always()
         run: docker logs korden-smoke || true
+
+  enterprise-workforce-audit:
+    name: Workforce optimization and relational data integrity
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - run: python -m pip install -r requirements.txt
+      - run: python staffing_lab.py --count 24 --seed-start 1000 --time-limit 2 --out artifacts/staffing
+      - run: python planning_workflow.py --data-dir samples/enterprise/field_service --name "CI Service" --industry "Service" --time-unit minute --time-limit 5 --out artifacts/enterprise
+      - name: Verify mathematical proof and SQL reconciliations
+        run: |
+          python - <<'PYCODE'
+          import json,sqlite3
+          summary=json.load(open('artifacts/staffing.json'))['summary']
+          assert summary['fixed_total']==967 and summary['flexible_total']==645
+          assert summary['both_optimal']==24 and summary['total_jobs']==144
+          con=sqlite3.connect('artifacts/enterprise/planning_analytics.sqlite3')
+          rows=con.execute('SELECT plan,weighted_tardiness FROM run_summary ORDER BY plan').fetchall()
+          assert rows==[('baseline',16),('optimized',16)],rows
+          assert con.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+          PYCODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: korden-workforce-sql-audit
+          path: |
+            artifacts/staffing.*
+            artifacts/enterprise/*.csv

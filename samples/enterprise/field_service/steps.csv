@@ -1,0 +1,3 @@
+order_id,sequence,step_id,name,duration,requires_all,eligible_resources,reserve_resources,choose_one_support_from,choose_one_support_with
+A,1,repair,Repair A,4,van,,,,certified
+B,1,repair,Repair B,4,van,,,,certified

@@ -1,0 +1,282 @@
+{
+  "summary": {
+    "experiment": "Fixed preassignment vs MILP-selected staff from identical three-person qualified pool",
+    "seed_start": 1000,
+    "count": 24,
+    "total_jobs": 144,
+    "total_operations": 144,
+    "fixed_total": 967,
+    "flexible_total": 645,
+    "relative_reduction_pct": 33.3,
+    "improved": 19,
+    "tied": 5,
+    "both_optimal": 24,
+    "statement": "Synthetic test only. Fixed staffing is a constrained policy, not an independent real factory outcome."
+  },
+  "instances": [
+    {
+      "seed": 1000,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 46,
+      "flexible_score": 0,
+      "delta": 46,
+      "fixed_solve_seconds": 0.006,
+      "flexible_solve_seconds": 0.056,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1001,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 80,
+      "flexible_score": 75,
+      "delta": 5,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.09,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1002,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 75,
+      "flexible_score": 34,
+      "delta": 41,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.104,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1003,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 124,
+      "flexible_score": 117,
+      "delta": 7,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.047,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1004,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 46,
+      "flexible_score": 11,
+      "delta": 35,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.092,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1005,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 10,
+      "flexible_score": 3,
+      "delta": 7,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.046,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1006,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 0,
+      "flexible_score": 0,
+      "delta": 0,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.053,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1007,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 27,
+      "flexible_score": 5,
+      "delta": 22,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.074,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1008,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 12,
+      "flexible_score": 12,
+      "delta": 0,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.037,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1009,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 36,
+      "flexible_score": 12,
+      "delta": 24,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.026,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1010,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 83,
+      "flexible_score": 34,
+      "delta": 49,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.064,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1011,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 12,
+      "flexible_score": 6,
+      "delta": 6,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.07,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1012,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 28,
+      "flexible_score": 22,
+      "delta": 6,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.067,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1013,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 28,
+      "flexible_score": 19,
+      "delta": 9,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.04,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1014,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 41,
+      "flexible_score": 36,
+      "delta": 5,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.06,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1015,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 102,
+      "flexible_score": 81,
+      "delta": 21,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.197,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1016,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 25,
+      "flexible_score": 5,
+      "delta": 20,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.04,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1017,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 14,
+      "flexible_score": 14,
+      "delta": 0,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.053,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1018,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 32,
+      "flexible_score": 30,
+      "delta": 2,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.045,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1019,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 0,
+      "flexible_score": 0,
+      "delta": 0,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.036,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1020,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 34,
+      "flexible_score": 24,
+      "delta": 10,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.094,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1021,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 27,
+      "flexible_score": 27,
+      "delta": 0,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.073,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1022,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 48,
+      "flexible_score": 45,
+      "delta": 3,
+      "fixed_solve_seconds": 0.002,
+      "flexible_solve_seconds": 0.044,
+      "proven_optimal": 1
+    },
+    {
+      "seed": 1023,
+      "jobs": 6,
+      "operations": 6,
+      "fixed_score": 37,
+      "flexible_score": 33,
+      "delta": 4,
+      "fixed_solve_seconds": 0.003,
+      "flexible_solve_seconds": 0.084,
+      "proven_optimal": 1
+    }
+  ]
+}

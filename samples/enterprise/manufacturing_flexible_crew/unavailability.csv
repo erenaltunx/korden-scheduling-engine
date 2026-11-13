@@ -1,0 +1,4 @@
+resource_id,start,end
+MILL_1,10,13
+CNC_OPERATOR,13,16
+CNC_OPERATOR_B,0,4

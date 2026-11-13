@@ -96,8 +96,21 @@ def optimize(data: dict, time_limit: float = 8.0, *,
                 assignments[(t.key, machine)] = m.var(f"machine:{t.key}:{machine}", choice, choice)
             else:
                 assignments[(t.key, machine)] = m.var(f"machine:{t.key}:{machine}")
-        # A task chooses exactly one primary resource, but reserves every
-        # required support resource simultaneously for its entire duration.
+        # Choose exactly one qualified support from the optional resource pool.
+        # This is a real MILP decision, not a greedy pre-selection.
+        if t.support_options:
+            if t.key in fixed_operations:
+                chosen_supports = set(fixed_operations[t.key].get('support_resources', []))
+                if len(chosen_supports & set(t.support_options)) != 1:
+                    raise ValueError(f"Invalid fixed support assignment for {t.key}")
+            for supporting in t.support_options:
+                choice = int(supporting in chosen_supports) if t.key in fixed_operations else None
+                assignments[(t.key, supporting)] = m.var(
+                    f"support_choice:{t.key}:{supporting}",
+                    choice if choice is not None else 0,
+                    choice if choice is not None else 1)
+            m.row({assignments[(t.key, supporting)]: 1 for supporting in t.support_options}, lb=1, ub=1)
+        # Fixed support reservations remain mandatory.
         for supporting in t.support_resources:
             assignments[(t.key, supporting)] = m.var(
                 f"reserved:{t.key}:{supporting}", 1, 1)
@@ -111,7 +124,7 @@ def optimize(data: dict, time_limit: float = 8.0, *,
     # For each pair eligible on same machine, require one task before the other
     # if and only if both choose that machine.
     for machine in windows:
-        eligible = [t for t in tasks if machine in t.machines or machine in t.support_resources]
+        eligible = [t for t in tasks if machine in t.machines or machine in t.support_resources or machine in t.support_options]
         for a, b in combinations(eligible, 2):
             z = m.var(f"order:{machine}:{a.key}:{b.key}")
             xa, xb = assignments[(a.key, machine)], assignments[(b.key, machine)]
@@ -159,8 +172,10 @@ def optimize(data: dict, time_limit: float = 8.0, *,
         row = {"key": t.key, "job": t.job_id, "operation": t.operation_id,
                "machine": chosen, "start": start, "end": start + t.duration,
                "duration": t.duration}
-        if t.support_resources:
-            row['support_resources'] = list(t.support_resources)
+        if t.support_resources or t.support_options:
+            row['support_resources'] = [*t.support_resources, *(
+                [max(t.support_options, key=lambda rid: result.x[assignments[(t.key, rid)]])]
+                if t.support_options else [])]
         schedule.append(row)
     return {"schedule": sorted(schedule, key=lambda r: (r["start"], r["machine"], r["key"])),
             "solver": metadata}

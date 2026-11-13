@@ -96,9 +96,19 @@ The core evidence is not a dashboard screenshot but a **reproducible numerical i
 - [x] Reproducible three-sector, best-of-four benchmark and CI test.
 - [ ] Cross-industry rolling-reschedule adapter with formal execution state transitions.
 - [x] Fixed simultaneous multi-resource reservations (v0.7: CNC + operator, technician + vehicle, packing station + worker).
-- [ ] Dynamic crew/resource-pool selection, shift calendars, setup and transit times.
+- [x] One dynamic qualified support worker per operation via MILP, baseline and rolling replay (v0.8).
+- [ ] Variable-size teams, shift calendars, setup and transit times.
 - [ ] Strong CP-SAT and scalable heuristic solver registry with honest time-limit metadata.
 - [ ] Real customer pilot with opt-in, permissioned data ingestion, rigorous domain validation and independent outcome measurement.
 - [ ] Hosted demo with synthetic data and a publicly verified browser smoke test.
 
 See `VISION_AND_DOMAIN_CONTRACT.md`; never confuse initial portability of the data contract with full model coverage of all industries.
+
+## v0.8 — Enterprise and career-proof capability
+- [x] Skill-based worker pool optimization and strict independent double-booking checks.
+- [x] CSV work orders/resources/steps/unavailability ingestion, fail-closed schema enforcement.
+- [x] Five relational SQLite reporting tables + example SQL KPIs + Power BI-ready CSV export.
+- [x] 24 fixed-seed comparative staffing experiments, checked against optimal solutions.
+- [ ] Live ERP/SAP-certified integration or controlled customer pilot (not claimed).
+- [ ] Advanced DAX/Power BI report file, Power Query M transformations, and SAP demo sandbox work.
+- [ ] Skill-based variable team sizes, resource shift calendars and overtime costs.

@@ -95,7 +95,7 @@ def test_http_template_validation_and_run(tmp_path, monkeypatch):
     client = TestClient(app)
     r = client.get('/api/universal/templates')
     assert r.status_code == 200
-    assert {x['id'] for x in r.json()} == {'manufacturing', 'field_service', 'warehouse'}
+    assert {'manufacturing', 'field_service', 'warehouse'}.issubset({x['id'] for x in r.json()})
     assert client.get('/api/universal/templates/../../bad').status_code == 404
     source = client.get('/api/universal/templates/field_service').json()
     validated = client.post('/api/universal/validate', json={'scenario': source})
