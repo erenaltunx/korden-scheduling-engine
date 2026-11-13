@@ -2,6 +2,7 @@ name: KORDEN Quality Gate
 
 on:
   push:
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
